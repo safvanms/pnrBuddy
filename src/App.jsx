@@ -22,8 +22,8 @@ function App() {
   });
 
   const [currentTicket, setCurrentTicket] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [queriedPnr, setQueriedPnr] = useState('4146937169');
+  const [loading, setLoading] = useState(false);
+  const [queriedPnr, setQueriedPnr] = useState('');
   const [notFoundState, setNotFoundState] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [alertActive, setAlertActive] = useState(false);
@@ -49,11 +49,6 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('pnrbuddy_theme', theme);
   }, [theme]);
-
-  // Initial load: Fetch real verified live PNR 4146937169
-  useEffect(() => {
-    handleSearch('4146937169', true);
-  }, []);
 
   // Auto-hide toast
   useEffect(() => {
@@ -204,6 +199,34 @@ function App() {
         onSelectPnr={(pnr) => handleSearch(pnr)}
         onClearHistory={handleClearHistory}
       />
+
+      {/* Clean Initial Guide when no PNR is searched yet */}
+      {!loading && !notFoundState && !currentTicket && (
+        <div className="glass-panel empty-landing-panel" style={{ textAlign: 'center', padding: '2.5rem 1.5rem', marginTop: '0.5rem' }}>
+          <div style={{ maxWidth: '520px', margin: '0 auto' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.65rem', color: 'var(--text-primary)' }}>
+              Track Any Indian Railways PNR
+            </h3>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '1.5rem' }}>
+              Enter your 10-digit PNR number printed on your IRCTC ticket or SMS to see live booking status, current confirmation chances, and chart status.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.85rem', textAlign: 'left' }}>
+              <div style={{ padding: '0.85rem', borderRadius: 'var(--radius-sm)', background: 'var(--surface-hover)', border: '1px solid var(--surface-glass-border)' }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--accent-cyan)', marginBottom: '0.25rem' }}>Live PRS Gateway</div>
+                <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>Real-time sync with CRIS railway database</div>
+              </div>
+              <div style={{ padding: '0.85rem', borderRadius: 'var(--radius-sm)', background: 'var(--surface-hover)', border: '1px solid var(--surface-glass-border)' }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#34d399', marginBottom: '0.25rem' }}>Chances Engine</div>
+                <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>Historical confirmation probability</div>
+              </div>
+              <div style={{ padding: '0.85rem', borderRadius: 'var(--radius-sm)', background: 'var(--surface-hover)', border: '1px solid var(--surface-glass-border)' }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#fbbf24', marginBottom: '0.25rem' }}>Live Charting</div>
+                <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>Coach position & berth allotment</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Custom Rail Scanner Loader */}
       {loading && (
