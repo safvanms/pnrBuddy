@@ -14,7 +14,7 @@ import PnrGuideModal from './components/PnrGuideModal';
 import IndianRailJsonModal from './components/IndianRailJsonModal';
 import NotificationToast from './components/NotificationToast';
 
-import { fetchLivePnr } from './services/pnrService';
+import { fetchLivePnr, normalizeErrorMessage } from './services/pnrService';
 
 function App() {
   const [theme, setTheme] = useState(() => {
@@ -124,7 +124,7 @@ function App() {
         setCurrentTicket(null);
         setNotFoundState({
           pnr: cleanPnr,
-          message: result.error || 'The requested PNR record was not found in active Indian Railways reservation database. Records are purged from PRS after journey completion.'
+          message: normalizeErrorMessage(result.error)
         });
       }
     } catch (err) {
@@ -133,7 +133,7 @@ function App() {
       setCurrentTicket(null);
       setNotFoundState({
         pnr: cleanPnr,
-        message: err.message || 'Unable to reach Indian Railways reservation servers. Please check your connection and retry.'
+        message: normalizeErrorMessage(err)
       });
     }
   };

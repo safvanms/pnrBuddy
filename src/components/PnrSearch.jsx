@@ -112,7 +112,7 @@ export default function PnrSearch({
             <button
               type="submit"
               className="btn-primary search-submit-btn"
-              disabled={loading}
+              disabled={loading || !isComplete}
               id="check-pnr-button"
             >
               {loading ? (

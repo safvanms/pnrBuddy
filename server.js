@@ -64,7 +64,7 @@ const server = http.createServer(async (req, res) => {
           res.end(JSON.stringify({ 
             success: false, 
             pnr,
-            error: pnrRes?.error || 'Flushed PNR / PNR not yet generated in Indian Railways reservation database.' 
+            error: typeof pnrRes?.error === 'string' ? pnrRes.error : (pnrRes?.error?.message || 'Flushed PNR / PNR not yet generated in Indian Railways reservation database.') 
           }));
           return;
         }

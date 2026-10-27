@@ -1,0 +1,2 @@
+/api/pnr/:pnr  https://cttrainsapi.confirmtkt.com/api/v2/ctpro/mweb/:pnr?querysource=ct-web&locale=en&getHighChanceText=true&livePnr=true  200!
+/*  /index.html  200

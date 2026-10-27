@@ -1,7 +1,7 @@
 import React from 'react';
-import { AlertCircle, RefreshCw, HelpCircle, ArrowRight, ShieldAlert } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
-export default function PnrNotFound({ pnr, errorMessage, onRetry, onTryDemo }) {
+export default function PnrNotFound({ pnr, errorMessage, onRetry }) {
   return (
     <div className="glass-panel not-found-panel">
       <div className="not-found-icon-wrap">
@@ -16,7 +16,10 @@ export default function PnrNotFound({ pnr, errorMessage, onRetry, onTryDemo }) {
 
       {errorMessage && (
         <div className="not-found-server-note">
-          <strong>Railway Server Response:</strong> {errorMessage}
+          <strong>Railway Server Response:</strong>{' '}
+          {typeof errorMessage === 'string'
+            ? errorMessage
+            : (errorMessage?.message || errorMessage?.error || 'Record purged or not yet generated in PRS.')}
         </div>
       )}
 

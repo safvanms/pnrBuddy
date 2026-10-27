@@ -1,37 +1,69 @@
 // Service to fetch live Indian Railways PNR details and transform into official schema
 // Zero hardcoded dummy data - pure live API pipeline
 
+// Safely normalize any error into a clean user-readable string
+// Guarantees objects like {code, message} are never returned as raw objects
+export function normalizeErrorMessage(err, fallback = 'The requested PNR record was not found or has been flushed from Indian Railways reservation database.') {
+  if (!err) return fallback;
+  if (typeof err === 'string') return err.trim() || fallback;
+  if (typeof err.message === 'string' && err.message) return err.message.trim();
+  if (typeof err.error === 'string' && err.error) return err.error.trim();
+  if (typeof err.error === 'object' && err.error !== null) {
+    if (typeof err.error.message === 'string' && err.error.message) return err.error.message.trim();
+    if (typeof err.error.code === 'string' || typeof err.error.code === 'number') {
+      return `PRS Status: ${err.error.code}`;
+    }
+  }
+  if (typeof err.code === 'string' || typeof err.code === 'number') {
+    return err.message ? `${err.message}` : `Server code: ${err.code}`;
+  }
+  try {
+    const jsonStr = JSON.stringify(err);
+    if (jsonStr && jsonStr !== '{}') return jsonStr;
+  } catch {
+    // ignore
+  }
+  return fallback;
+}
+
 export async function fetchLivePnr(pnr) {
   const cleanPnr = pnr.replace(/\D/g, '').slice(0, 10);
   if (cleanPnr.length !== 10) {
     throw new Error('PNR must be a 10-digit number');
   }
 
-  // 1. Try internal backend/Vite endpoint first (queries live CRIS PRS)
+  let specificPrsError = null;
+
+  // 1. Try internal backend/Vite/Vercel endpoint first (queries live CRIS PRS)
   try {
     const localRes = await fetch(`/api/pnr/${cleanPnr}`, {
       headers: { 'Accept': 'application/json' }
     });
-    if (localRes.ok) {
+
+    const contentType = localRes.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
       const result = await localRes.json();
-      if (result.success && result.data?.pnrResponse?.trainNo) {
+      if (localRes.ok && result.success && result.data?.pnrResponse?.trainNo) {
         return {
           success: true,
           ticket: formatConfirmTktResponse(cleanPnr, result.data)
         };
       }
-    } else {
-      const errData = await localRes.json().catch(() => ({}));
-      return {
-        success: false,
-        error: errData.error || `Railway server responded with code ${localRes.status}`
-      };
+      // If our dedicated API proxy replied with a specific PNR error
+      if (result && result.pnr === cleanPnr && result.error) {
+        specificPrsError = normalizeErrorMessage(result.error);
+        // If it was a genuine flushed PNR error directly from PRS proxy
+        return {
+          success: false,
+          error: specificPrsError
+        };
+      }
     }
   } catch (err) {
     console.warn('Local API proxy query failed, trying direct fallback:', err);
   }
 
-  // 2. Direct fallback to ConfirmTkt live API
+  // 2. Direct fallback to ConfirmTkt live API (ConfirmTkt provides Access-Control-Allow-Origin: *)
   try {
     const directUrl = `https://cttrainsapi.confirmtkt.com/api/v2/ctpro/mweb/${cleanPnr}?querysource=ct-web&locale=en&getHighChanceText=true&livePnr=true`;
     const res = await fetch(directUrl, {
@@ -39,8 +71,7 @@ export async function fetchLivePnr(pnr) {
       headers: {
         'Content-Type': 'application/json',
         'Origin': 'https://www.confirmtkt.com',
-        'Referer': 'https://www.confirmtkt.com/',
-        'User-Agent': 'Mozilla/5.0'
+        'Referer': 'https://www.confirmtkt.com/'
       },
       body: JSON.stringify({
         proPlanName: 'CP7',
@@ -60,7 +91,7 @@ export async function fetchLivePnr(pnr) {
       } else if (pnrData?.error) {
         return {
           success: false,
-          error: pnrData.error
+          error: normalizeErrorMessage(pnrData.error)
         };
       }
     }
@@ -68,9 +99,34 @@ export async function fetchLivePnr(pnr) {
     console.warn('Direct ConfirmTkt API call encountered network boundary:', err);
   }
 
+  // 3. Resilient CORS proxy fallback if client network or browser adblocker restricted direct POST
+  try {
+    const targetUrl = encodeURIComponent(`https://cttrainsapi.confirmtkt.com/api/v2/ctpro/mweb/${cleanPnr}?querysource=ct-web&locale=en&getHighChanceText=true&livePnr=true`);
+    const proxyRes = await fetch(`https://api.allorigins.win/raw?url=${targetUrl}`, {
+      headers: { 'Accept': 'application/json' }
+    });
+    if (proxyRes.ok) {
+      const json = await proxyRes.json();
+      const pnrData = json.data?.pnrResponse;
+      if (pnrData && pnrData.trainNo && !pnrData.error) {
+        return {
+          success: true,
+          ticket: formatConfirmTktResponse(cleanPnr, json.data)
+        };
+      } else if (pnrData?.error) {
+        return {
+          success: false,
+          error: normalizeErrorMessage(pnrData.error)
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('Proxy fallback query failed:', err);
+  }
+
   return {
     success: false,
-    error: 'The requested PNR record was not found or has been flushed from Indian Railways reservation database.'
+    error: specificPrsError || 'The requested PNR record was not found or has been flushed from Indian Railways reservation database.'
   };
 }
 
