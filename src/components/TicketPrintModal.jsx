@@ -59,7 +59,7 @@ export default function TicketPrintModal({ ticket, onClose }) {
                   fontWeight: 800,
                   fontSize: '0.8rem'
                 }}>
-                  {ticket.overallStatus} • {ticket.statusLabel}
+                  {ticket.overallStatus === 'CNF' ? 'CONFIRMED' : `${ticket.overallStatus} • ${ticket.statusLabel}`}
                 </span>
                 <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
                   {ticket.chartStatus}

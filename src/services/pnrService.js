@@ -130,36 +130,51 @@ export async function fetchLivePnr(pnr) {
   };
 }
 
-// Get chances theme based on confirmation percentage
-export function getProbTheme(val) {
-  const num = typeof val === 'number' ? val : parseInt(String(val).replace(/\D/g, ''), 10) || 70;
-  if (num >= 70) {
+// Standardized confirmation probability calculation and theme (matches ConfirmTkt & Ixigo)
+// High: >= 70% (Green)
+// Medium: 30% - 69% (Amber / Orange)
+// Low: < 30% (Red)
+export function getProbTheme(val, isCnf = false) {
+  if (isCnf) {
     return {
       key: 'high',
-      color: '#10b981',
-      labelColor: '#34d399',
-      tier: 'High Chance',
-      bg: 'rgba(16, 185, 129, 0.14)',
-      border: 'rgba(16, 185, 129, 0.4)'
+      color: '#16a34a',
+      labelColor: '#22c55e',
+      tier: 'Confirmed',
+      bg: 'rgba(34, 197, 94, 0.12)',
+      border: 'rgba(34, 197, 94, 0.35)'
     };
   }
-  if (num >= 45) {
+
+  const num = typeof val === 'number' ? val : parseInt(String(val).replace(/\D/g, ''), 10) || 0;
+
+  if (num > 70) {
+    return {
+      key: 'high',
+      color: '#16a34a',
+      labelColor: '#22c55e',
+      tier: 'High Chance',
+      bg: 'rgba(34, 197, 94, 0.12)',
+      border: 'rgba(34, 197, 94, 0.35)'
+    };
+  }
+  if (num >= 30) {
     return {
       key: 'medium',
-      color: '#f59e0b',
-      labelColor: '#fbbf24',
+      color: '#d97706',
+      labelColor: '#f59e0b',
       tier: 'Medium Chance',
-      bg: 'rgba(245, 158, 11, 0.14)',
-      border: 'rgba(245, 158, 11, 0.4)'
+      bg: 'rgba(245, 158, 11, 0.12)',
+      border: 'rgba(245, 158, 11, 0.35)'
     };
   }
   return {
     key: 'low',
-    color: '#f43f5e',
-    labelColor: '#fb7185',
+    color: '#dc2626',
+    labelColor: '#f87171',
     tier: 'Low Chance',
-    bg: 'rgba(244, 63, 94, 0.14)',
-    border: 'rgba(244, 63, 94, 0.4)'
+    bg: 'rgba(239, 68, 68, 0.12)',
+    border: 'rgba(239, 68, 68, 0.35)'
   };
 }
 
@@ -317,7 +332,8 @@ export function formatConfirmTktResponse(pnr, rawData) {
     return {
       id: idx + 1,
       number: p.number || idx + 1,
-      name: `Passenger ${p.number || idx + 1}`,
+      name: p.passengerName || p.name || `Passenger ${p.number || idx + 1}`,
+      food: p.food || p.mealChoice || p.meal || '',
       quota: p.passengerQuota || pnrRes.quota || 'GN',
       bookingStatus: cleanBDetails,
       bookingStatusDetails: cleanBDetails,
@@ -339,10 +355,10 @@ export function formatConfirmTktResponse(pnr, rawData) {
   const anyCnf = passengers.some(p => p.currentStatus?.includes('CNF') || p.currentStatus === 'CONFIRMED');
 
   let overallStatus = 'CNF';
-  let statusLabel = 'Confirmed';
+  let statusLabel = 'CONFIRMED';
   if (isAllCnf) {
     overallStatus = 'CNF';
-    statusLabel = passengers.length > 1 ? `All ${passengers.length} Tickets Confirmed` : 'Confirmed';
+    statusLabel = 'CONFIRMED';
   } else if (anyCnf && (hasWl || hasRac)) {
     overallStatus = 'RAC';
     statusLabel = 'Partially Confirmed';

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Users, TrendingUp } from 'lucide-react';
+import { Users, TrendingUp, CheckCircle2 } from 'lucide-react';
+import { getProbTheme } from '../services/pnrService';
 
 export default function PassengerTable({ passengers, overallStatus }) {
   if (!passengers || passengers.length === 0) return null;
@@ -31,13 +32,10 @@ export default function PassengerTable({ passengers, overallStatus }) {
           </thead>
           <tbody>
             {passengers.map((p, idx) => {
+              const isCnf = p.currentStatus?.includes('CNF') || overallStatus === 'CNF';
               const match = p.prediction ? p.prediction.match(/(\d+)%/) : null;
-              const pVal = p.predictionPercentage || (match ? parseInt(match[1], 10) : (p.currentStatus?.includes('CNF') ? 100 : 70));
-              const isHigh = pVal >= 70;
-              const isMed = pVal >= 45;
-              const chanceColor = isHigh ? '#34d399' : isMed ? '#fbbf24' : '#fb7185';
-              const chanceBg = isHigh ? 'rgba(16, 185, 129, 0.16)' : isMed ? 'rgba(245, 158, 11, 0.16)' : 'rgba(244, 63, 94, 0.16)';
-              const chanceBorder = isHigh ? 'rgba(16, 185, 129, 0.4)' : isMed ? 'rgba(245, 158, 11, 0.4)' : 'rgba(244, 63, 94, 0.4)';
+              const pVal = p.predictionPercentage || (match ? parseInt(match[1], 10) : (isCnf ? 100 : (p.currentStatus?.includes('RAC') ? 85 : 70)));
+              const pTheme = getProbTheme(pVal, isCnf);
 
               return (
                 <tr key={p.id || idx} className="passenger-row">
@@ -69,9 +67,9 @@ export default function PassengerTable({ passengers, overallStatus }) {
                         padding: '0.28rem 0.75rem',
                         fontSize: '0.82rem',
                         fontWeight: 700,
-                        color: chanceColor,
-                        background: chanceBg,
-                        border: `1px solid ${chanceBorder}`,
+                        color: pTheme.labelColor,
+                        background: pTheme.bg,
+                        border: `1px solid ${pTheme.border}`,
                         borderRadius: 'var(--radius-full)'
                       }}
                     >
@@ -79,16 +77,32 @@ export default function PassengerTable({ passengers, overallStatus }) {
                     </span>
                   </td>
                   <td data-label="Live Prediction">
-                    {p.prediction || pVal ? (
+                    {isCnf ? (
                       <span style={{
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '0.35rem',
                         fontSize: '0.82rem',
                         fontWeight: 700,
-                        color: chanceColor,
-                        background: chanceBg,
-                        border: `1px solid ${chanceBorder}`,
+                        color: pTheme.labelColor,
+                        background: pTheme.bg,
+                        border: `1px solid ${pTheme.border}`,
+                        padding: '0.2rem 0.6rem',
+                        borderRadius: 'var(--radius-full)'
+                      }}>
+                        <CheckCircle2 size={13} />
+                        100% Confirmed
+                      </span>
+                    ) : (p.prediction || pVal) ? (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        color: pTheme.labelColor,
+                        background: pTheme.bg,
+                        border: `1px solid ${pTheme.border}`,
                         padding: '0.2rem 0.6rem',
                         borderRadius: 'var(--radius-full)'
                       }}>
