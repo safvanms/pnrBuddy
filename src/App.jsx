@@ -299,14 +299,8 @@ function App() {
       {/* Clean Footer */}
       <footer className="site-footer">
         <strong>pnrBuddy</strong>
-        <p>
-          Fast, Live Indian Railways PNR Status & Telemetry
-        </p>
         <p style={{ fontSize: '0.72rem', opacity: 0.6 }}>
-          Direct CRIS PRS Gateway: <code>/api/pnr/:pnr?format=raw</code>
-        </p>
-        <p style={{ fontSize: '0.72rem', opacity: 0.6 }}>
-        <code> muhammedsafvan1ms@icloud.com</code>
+        <code>muhammedsafvan1ms@icloud.com</code>
       </p>
       <code style={{ fontSize: '0.72rem', opacity: 0.6 }}>&copy;2026 pnrBuddy.dev All rights reserved.</code>
     </footer>

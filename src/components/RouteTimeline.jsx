@@ -19,12 +19,12 @@ export default function RouteTimeline({ ticket }) {
 
       {/* Main Departure / Arrival Nodes */}
       <div className="timeline-section">
-        {/* Origin */}
-        <div className="station-node">
-          <span className="station-code">{ticket.fromStation.code}</span>
-          <span className="station-name">{ticket.fromStation.name}</span>
-          <span className="station-time">{ticket.departureTime}</span>
-          <span className="station-platform">{ticket.fromStation.platform}</span>
+        {/* Origin (Boarding Station) */}
+        <div className="station-node station-node-origin">
+          <span className="station-code">{ticket.fromStation?.code || 'SRC'}</span>
+          <span className="station-name" title={ticket.fromStation?.name}>{ticket.fromStation?.name || ticket.fromStation?.code || 'Boarding Station'}</span>
+          <span className="station-time">{ticket.departureTime || '--:--'}</span>
+          <span className="station-platform">{ticket.fromStation?.platform || 'Platform --'}</span>
         </div>
 
         {/* Dynamic Journey Bar */}
@@ -42,23 +42,23 @@ export default function RouteTimeline({ ticket }) {
             <div 
               className="train-mover-icon" 
               style={{ left: `${running ? running.progressPercent : 35}%` }}
-              title={`Track monitored: ${ticket.fromStation.code} ➔ ${ticket.toStation.code}`}
+              title={`Track monitored: ${ticket.fromStation?.code || ''} ➔ ${ticket.toStation?.code || ''}`}
             >
               <Train size={13} />
             </div>
           </div>
 
           <span className="journey-distance">
-            Indian Railways Mainline
+            {ticket.distanceKm ? `${ticket.distanceKm.toLocaleString()} km Mainline` : 'Indian Railways Mainline'}
           </span>
         </div>
 
-        {/* Destination */}
-        <div className="station-node right">
-          <span className="station-code">{ticket.toStation.code}</span>
-          <span className="station-name">{ticket.toStation.name}</span>
-          <span className="station-time">{ticket.arrivalTime}</span>
-          <span className="station-platform">{ticket.toStation.platform}</span>
+        {/* Destination Station */}
+        <div className="station-node station-node-dest right">
+          <span className="station-code">{ticket.toStation?.code || 'DST'}</span>
+          <span className="station-name" title={ticket.toStation?.name}>{ticket.toStation?.name || ticket.toStation?.code || 'Destination Station'}</span>
+          <span className="station-time">{ticket.arrivalTime || '--:--'}</span>
+          <span className="station-platform">{ticket.toStation?.platform || 'Platform --'}</span>
         </div>
       </div>
 

@@ -9,9 +9,160 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('pnrbuddy_theme') || 'dark';
+          document.documentElement.setAttribute('data-theme', t);
+        } catch(e) {}
+      })();
+    </script>
+    <style>
+      /* Instant App Mounting Preloader: 0ms initial paint before React boots */
+      :root {
+        --preloader-bg: #070b14;
+        --preloader-text: #f8fafc;
+        --preloader-subtext: #94a3b8;
+        --preloader-accent: #06b6d4;
+      }
+      [data-theme='light'] {
+        --preloader-bg: #f1f5f9;
+        --preloader-text: #0f172a;
+        --preloader-subtext: #64748b;
+        --preloader-accent: #0284c7;
+      }
+      html, body {
+        background-color: var(--preloader-bg);
+        margin: 0;
+        padding: 0;
+      }
+      .preloader-splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: var(--preloader-bg);
+        z-index: 99999;
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        padding: 1.5rem;
+        box-sizing: border-box;
+      }
+      .preloader-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        max-width: 320px;
+        width: 100%;
+      }
+      .preloader-icon-wrap {
+        position: relative;
+        width: 68px;
+        height: 68px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.25rem;
+      }
+      .preloader-pulse {
+        position: absolute;
+        inset: -6px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(6, 182, 212, 0.45) 0%, rgba(59, 130, 246, 0) 70%);
+        animation: preloaderPulse 2s ease-in-out infinite;
+      }
+      .preloader-icon-box {
+        position: relative;
+        width: 58px;
+        height: 58px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(59, 130, 246, 0.1));
+        border: 1.5px solid rgba(6, 182, 212, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--preloader-accent);
+        box-shadow: 0 8px 24px rgba(6, 182, 212, 0.25);
+      }
+      .preloader-title {
+        font-size: 1.45rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: var(--preloader-text);
+        margin-bottom: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+      }
+      .preloader-title span {
+        background: linear-gradient(135deg, #06b6d4, #3b82f6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .preloader-track {
+        width: 160px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 999px;
+        overflow: hidden;
+        position: relative;
+        margin-bottom: 0.75rem;
+      }
+      [data-theme='light'] .preloader-track {
+        background: rgba(0, 0, 0, 0.1);
+      }
+      .preloader-bar {
+        position: absolute;
+        height: 100%;
+        width: 45%;
+        background: linear-gradient(90deg, #06b6d4, #3b82f6);
+        border-radius: 999px;
+        animation: preloaderTrack 1.4s ease-in-out infinite alternate;
+      }
+      .preloader-subtitle {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--preloader-subtext);
+        letter-spacing: 0.02em;
+      }
+      @keyframes preloaderPulse {
+        0%, 100% { transform: scale(1); opacity: 0.6; }
+        50% { transform: scale(1.35); opacity: 1; }
+      }
+      @keyframes preloaderTrack {
+        0% { transform: translateX(-50%); }
+        100% { transform: translateX(250%); }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="preloader-splash" id="splash-preloader">
+        <div class="preloader-card">
+          <div class="preloader-icon-wrap">
+            <div class="preloader-pulse"></div>
+            <div class="preloader-icon-box">
+              <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="16" height="16" x="4" y="3" rx="2"/>
+                <path d="M4 11h16"/>
+                <path d="M12 3v8"/>
+                <path d="m8 19-2 3"/>
+                <path d="m18 22-2-3"/>
+                <circle cx="8" cy="15" r="1"/>
+                <circle cx="16" cy="15" r="1"/>
+              </svg>
+            </div>
+          </div>
+          <div class="preloader-title">pnr<span>Buddy</span></div>
+          <div class="preloader-track">
+            <div class="preloader-bar"></div>
+          </div>
+          <div class="preloader-subtitle">Connecting to Indian Railways PRS...</div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
