@@ -239,6 +239,7 @@ function App() {
           pnr={notFoundState.pnr}
           errorMessage={notFoundState.message}
           onRetry={() => handleSearch(notFoundState.pnr)}
+          onClear={() => setNotFoundState(null)}
         />
       )}
 

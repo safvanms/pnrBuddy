@@ -96,7 +96,7 @@ export default function PnrSearch({
                     title="Clear input"
                     aria-label="Clear PNR number"
                   >
-                    <X size={15} />
+                    <X size={12} />
                   </button>
                 )}
 
