@@ -1356,40 +1356,46 @@ body {
   flex-shrink: 0;
 }
 
-.confirmtkt-status-badge.badge-cnf {
+.confirmtkt-status-badge.badge-cnf,
+.confirmtkt-status-badge.badge-high {
   background: #f0fdf4;
   color: #15803d;
   border: 1px solid #86efac;
 }
 
-[data-theme="dark"] .confirmtkt-status-badge.badge-cnf {
+[data-theme="dark"] .confirmtkt-status-badge.badge-cnf,
+[data-theme="dark"] .confirmtkt-status-badge.badge-high {
   background: rgba(34, 197, 94, 0.12);
   color: #4ade80;
   border: 1px solid rgba(34, 197, 94, 0.4);
 }
 
+.confirmtkt-status-badge.badge-medium,
+.confirmtkt-status-badge.badge-rac,
 .confirmtkt-status-badge.badge-wl {
   background: #fffbeb;
   color: #d97706;
   border: 1px solid #fcd34d;
 }
 
+[data-theme="dark"] .confirmtkt-status-badge.badge-medium,
+[data-theme="dark"] .confirmtkt-status-badge.badge-rac,
 [data-theme="dark"] .confirmtkt-status-badge.badge-wl {
   background: rgba(249, 115, 22, 0.14);
   color: #fb923c;
   border: 1px solid rgba(249, 115, 22, 0.4);
 }
 
-.confirmtkt-status-badge.badge-rac {
-  background: #fefce8;
-  color: #b45309;
-  border: 1px solid #fde047;
+.confirmtkt-status-badge.badge-low {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
 }
 
-[data-theme="dark"] .confirmtkt-status-badge.badge-rac {
-  background: rgba(245, 158, 11, 0.14);
-  color: #facc15;
-  border: 1px solid rgba(245, 158, 11, 0.4);
+[data-theme="dark"] .confirmtkt-status-badge.badge-low {
+  background: rgba(239, 68, 68, 0.14);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
 }
 
 .confirmtkt-booking-desc {

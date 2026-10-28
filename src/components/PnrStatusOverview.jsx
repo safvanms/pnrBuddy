@@ -163,7 +163,7 @@ export default function PnrStatusOverview({
                 {/* Bottom Line: [Status Badge] Booking Text ... Outcome */}
                 <div className="confirmtkt-passenger-body">
                   <div className="confirmtkt-status-col">
-                    <span className={`confirmtkt-status-badge badge-${isCnf ? 'cnf' : isRac ? 'rac' : 'wl'}`}>
+                    <span className={`confirmtkt-status-badge badge-${isCnf ? 'cnf' : pTheme.key}`}>
                       {badgeText}
                     </span>
                     <span className="confirmtkt-booking-desc">

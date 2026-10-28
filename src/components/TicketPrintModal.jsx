@@ -1,8 +1,13 @@
 import React from 'react';
 import { X, Printer, Train, ShieldCheck, QrCode } from 'lucide-react';
+import { getProbTheme } from '../services/pnrService';
 
 export default function TicketPrintModal({ ticket, onClose }) {
   if (!ticket) return null;
+
+  const prob = ticket.confirmationProbability || 72;
+  const isCnfTicket = ticket.overallStatus === 'CNF';
+  const probTheme = getProbTheme(prob, isCnfTicket);
 
   const handlePrint = () => {
     window.print();
@@ -52,8 +57,9 @@ export default function TicketPrintModal({ ticket, onClose }) {
               <div style={{ textAlign: 'right' }}>
                 <span style={{
                   display: 'inline-block',
-                  background: ticket.overallStatus === 'CNF' ? '#dcfce7' : '#fef3c7',
-                  color: ticket.overallStatus === 'CNF' ? '#15803d' : '#b45309',
+                  background: probTheme.bg,
+                  color: probTheme.color,
+                  border: `1px solid ${probTheme.border}`,
                   padding: '0.2rem 0.6rem',
                   borderRadius: '4px',
                   fontWeight: 800,
@@ -144,19 +150,25 @@ export default function TicketPrintModal({ ticket, onClose }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {ticket.passengers.map((p, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '0.5rem', fontWeight: 700 }}>Passenger {p.number || idx + 1}</td>
-                      <td style={{ padding: '0.5rem', color: '#475569' }}>{p.bookingStatus}</td>
-                      <td style={{ padding: '0.5rem', fontWeight: 700, color: p.currentStatus?.includes('CNF') ? '#16a34a' : '#ea580c' }}>
-                        {p.currentStatus}
-                      </td>
-                      <td style={{ padding: '0.5rem', color: '#0284c7', fontWeight: 600 }}>{p.prediction || '--'}</td>
-                      <td style={{ padding: '0.5rem', fontWeight: 700, color: '#0284c7' }}>
-                        {p.coach && p.coach !== 'NA' ? `${p.coach} / ${p.berthNumber}` : 'Chart Pending'}
-                      </td>
-                    </tr>
-                  ))}
+                  {ticket.passengers.map((p, idx) => {
+                    const isCnf = p.currentStatus?.includes('CNF');
+                    const pChance = p.predictionPercentage || (isCnf ? 100 : prob);
+                    const pTheme = getProbTheme(pChance, isCnf);
+
+                    return (
+                      <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '0.5rem', fontWeight: 700 }}>Passenger {p.number || idx + 1}</td>
+                        <td style={{ padding: '0.5rem', color: '#475569' }}>{p.bookingStatus}</td>
+                        <td style={{ padding: '0.5rem', fontWeight: 700, color: pTheme.color }}>
+                          {p.currentStatus}
+                        </td>
+                        <td style={{ padding: '0.5rem', color: '#0284c7', fontWeight: 600 }}>{p.prediction || '--'}</td>
+                        <td style={{ padding: '0.5rem', fontWeight: 700, color: '#0284c7' }}>
+                          {p.coach && p.coach !== 'NA' ? `${p.coach} / ${p.berthNumber}` : 'Chart Pending'}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
