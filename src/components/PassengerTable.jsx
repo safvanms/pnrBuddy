@@ -139,7 +139,7 @@ export default function PassengerTable({ passengers, overallStatus }) {
                   </td>
                   <td data-label="Coach / Seat">
                     <span className="seat-highlight-badge">
-                      {p.coach && p.coach !== 'NA' ? `${p.coach} / ${p.berthNumber}` : 'Unallotted'}
+                      {p.coach && p.coach !== 'NA' && p.coach !== '--' ? `${p.coach} / ${p.berthNumber}` : 'Unallotted'}
                     </span>
                   </td>
                   <td data-label="Allocation">

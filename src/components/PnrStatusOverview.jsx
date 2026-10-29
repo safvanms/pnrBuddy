@@ -12,7 +12,8 @@ import {
   TrendingUp,
   Code2,
   Armchair,
-  FileCheck
+  FileCheck,
+  Train
 } from 'lucide-react';
 
 import { getProbTheme } from '../services/pnrService';
@@ -398,7 +399,26 @@ export default function PnrStatusOverview({
           </div>
         </div>
 
-        {/* Tile 4: System Telemetry */}
+        {/* Tile 4: Coach */}
+        <div className="overview-tile">
+          <div className="tile-icon-box">
+            <Train size={15} />
+          </div>
+          <div className="tile-content">
+            <span className="tile-label">Coach</span>
+            <strong 
+              className="tile-value" 
+              style={{ color: ticket.coach && ticket.coach !== 'Pending Chart' && ticket.coach !== '--' ? 'var(--accent-cyan)' : 'var(--text-secondary)' }}
+              title={ticket.coach || 'Coach allotment'}
+            >
+              {ticket.coach && ticket.coach !== 'Pending Chart' && ticket.coach !== '--' 
+                ? ticket.coach 
+                : 'Pending Chart'}
+            </strong>
+          </div>
+        </div>
+
+        {/* Tile 5: System Telemetry */}
         <div className="overview-tile">
           <div className="tile-icon-box">
             <Zap size={15} />

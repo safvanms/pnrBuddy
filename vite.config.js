@@ -85,6 +85,7 @@ function pnrApiPlugin() {
                   passengerNationality: 'IN',
                   passengerQuota: p.bookingStatus?.includes('RL') ? 'RL' : (pnrRes.quota || 'GN'),
                   passengerCoachPosition: p.coachPosition || 0,
+                  coachPosition: p.coachPosition || null,
                   waitListType: 0,
                   bookingStatusIndex: 0,
                   bookingStatus: (bStatus || '').replace(/\s+/g, ' ').trim(),
@@ -128,6 +129,7 @@ function pnrApiPlugin() {
                 bookingDate: pnrRes.bookingDate || '',
                 arrivalDate: pnrRes.destinationDoj ? `${pnrRes.destinationDoj} ${pnrRes.arrivalTime || ''}`.trim() : '',
                 distance: pnrRes.distance || null,
+                coachPosition: pnrRes.coachPosition || null,
                 isWL: pnrRes.passengerStatus?.[0]?.currentStatus?.includes('WL') ? 'Y' : 'N'
               };
 

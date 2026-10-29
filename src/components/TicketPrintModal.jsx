@@ -341,7 +341,7 @@ export default function TicketPrintModal({ ticket, onClose, onDownloadSuccess })
                     const pTheme = getProbTheme(pChance, isCnf, isCan);
                     const berthType = getBerthTypeLabel(p);
                     const coachBerthText = (p.coach && p.coach !== 'NA' && p.coach !== '--')
-                      ? `${p.coach}, ${p.berthNumber}${berthType ? ` • ${berthType}` : ''}`
+                      ? `${p.coach}, ${p.berthNumber}${berthType ? ` • ${berthType}` : ''}${p.coachPositionLabel ? ` (${p.coachPositionLabel})` : ''}`
                       : 'Chart Pending';
 
                     return (
@@ -376,7 +376,7 @@ export default function TicketPrintModal({ ticket, onClose, onDownloadSuccess })
                   const pTheme = getProbTheme(pChance, isCnf, isCan);
                   const berthType = getBerthTypeLabel(p);
                   const coachBerthText = (p.coach && p.coach !== 'NA' && p.coach !== '--')
-                    ? `${p.coach}, ${p.berthNumber}${berthType ? ` (${berthType})` : ''}`
+                    ? `${p.coach}, ${p.berthNumber}${berthType ? ` (${berthType})` : ''}${p.coachPositionLabel ? ` • ${p.coachPositionLabel}` : ''}`
                     : 'Chart Pending';
 
                   return (
@@ -530,7 +530,8 @@ function generatePrintableHtml(ticket, probTheme, isCanTicket, isCnfTicket, getB
   const fp       = passengers[0] || {};
   const fpCoach  = (fp.coach && fp.coach !== '--' && fp.coach !== 'NA') ? fp.coach : '--';
   const fpBerth  = (fp.berthNumber && fp.berthNumber !== '--') ? fp.berthNumber : '--';
-  const firstSeat = fpCoach !== '--' ? (fpCoach + ' / ' + fpBerth) : 'Pending';
+  const fpPos    = fp.coachPositionLabel ? (' • ' + fp.coachPositionLabel) : '';
+  const firstSeat = fpCoach !== '--' ? (fpCoach + ' / ' + fpBerth + fpPos) : 'Pending';
 
   // ── Passenger table rows ─────────────────────────────────
   const paxRows = passengers.map(function(p, idx) {
@@ -543,7 +544,7 @@ function generatePrintableHtml(ticket, probTheme, isCanTicket, isCnfTicket, getB
     );
     const bt = getBerthTypeLabel(p);
     const cb = (p.coach && p.coach !== 'NA' && p.coach !== '--')
-      ? (p.coach + ' / ' + p.berthNumber + (bt ? (' (' + bt + ')') : ''))
+      ? (p.coach + ' / ' + p.berthNumber + (bt ? (' (' + bt + ')') : '') + (p.coachPositionLabel ? (' • ' + p.coachPositionLabel) : ''))
       : 'Chart Pending';
     const ps   = isCan ? 'CANCELLED' : isCnf ? 'CONFIRMED' : (p.currentStatus || '--');
     const pc   = isCan ? '#dc2626'   : isCnf ? '#16a34a'   : '#d97706';
@@ -569,7 +570,7 @@ function generatePrintableHtml(ticket, probTheme, isCanTicket, isCnfTicket, getB
     );
     const bt  = getBerthTypeLabel(p);
     const cb  = (p.coach && p.coach !== 'NA' && p.coach !== '--')
-      ? (p.coach + ' / ' + p.berthNumber + (bt ? (' (' + bt + ')') : ''))
+      ? (p.coach + ' / ' + p.berthNumber + (bt ? (' (' + bt + ')') : '') + (p.coachPositionLabel ? (' • ' + p.coachPositionLabel) : ''))
       : 'Chart Pending';
     const ps  = isCan ? 'CANCELLED' : isCnf ? 'CONFIRMED' : (p.currentStatus || '--');
     const pc  = isCan ? '#dc2626'   : isCnf ? '#16a34a'   : '#d97706';

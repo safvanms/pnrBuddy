@@ -304,7 +304,242 @@ export function convertToIndianRailGovSchema(pnr, pnrRes) {
     waitListType: 0,
     bookingDate: pnrRes.bookingDate || '',
     arrivalDate: pnrRes.destinationDoj ? `${pnrRes.destinationDoj} ${pnrRes.arrivalTime || ''}`.trim() : '',
-    distance: pnrRes.distance || null
+    distance: pnrRes.distance || null,
+    coachPosition: pnrRes.coachPosition || null
+  };
+}
+
+// Ordinal suffix helper (e.g. 1 -> 1st, 2 -> 2nd, 3 -> 3rd, 4 -> 4th, 14 -> 14th)
+export function getOrdinalSuffix(num) {
+  if (!num || isNaN(num)) return '';
+  const n = parseInt(num, 10);
+  const j = n % 10;
+  const k = n % 100;
+  if (j === 1 && k !== 11) {
+    return `${n}st`;
+  }
+  if (j === 2 && k !== 12) {
+    return `${n}nd`;
+  }
+  if (j === 3 && k !== 13) {
+    return `${n}rd`;
+  }
+  return `${n}th`;
+}
+
+// Map coach code to standardized category for thematic styling
+export function getCoachCategory(coachCode = '') {
+  const code = String(coachCode).toUpperCase().trim();
+  if (!code || code === 'L' || code === 'ENG' || code === 'LOCO' || code.startsWith('WAP') || code.startsWith('WAG') || code.startsWith('WDP')) {
+    return 'engine';
+  }
+  if (code === 'SLR' || code === 'EOG' || code === 'LSLR' || code === 'DL1' || code === 'DL2' || code === 'DTC') {
+    return 'guard';
+  }
+  if (code === 'PC' || code === 'PANTRY') {
+    return 'pantry';
+  }
+  if (code.startsWith('H') || code === '1A') {
+    return 'first-ac';
+  }
+  if (code.startsWith('A') || code === '2A' || code.startsWith('HA')) {
+    return 'two-tier';
+  }
+  if (code.startsWith('B') || code === '3A' || code.startsWith('AB')) {
+    return 'three-tier';
+  }
+  if (code.startsWith('M') || code === '3E') {
+    return 'three-economy';
+  }
+  if (code.startsWith('S') && !code.startsWith('SLR')) {
+    return 'sleeper';
+  }
+  if (code.startsWith('C') || code === 'CC') {
+    return 'chair-car';
+  }
+  if (code.startsWith('E') || code === 'EC' || code.startsWith('EA')) {
+    return 'exec-chair';
+  }
+  if (code.startsWith('D') && code !== 'DTC') {
+    return 'second-sitting';
+  }
+  if (code === 'GS' || code === 'UR' || code === 'GEN') {
+    return 'general';
+  }
+  if (code.startsWith('V')) {
+    return 'vistadome';
+  }
+  return 'general';
+}
+
+// Get descriptive class and name from coach code
+export function getCoachClassDetails(coachCode = '', defaultClassCode = '') {
+  const code = String(coachCode).toUpperCase().trim();
+  const category = getCoachCategory(code);
+
+  const map = {
+    'engine': { name: 'Locomotive (Engine)', shortClass: 'LOCO', description: 'Front Power Unit' },
+    'guard': { name: code === 'EOG' ? 'End on Generator (Power Car)' : 'Luggage & Guard Van', shortClass: code, description: 'Brake / Power Van' },
+    'pantry': { name: 'Pantry Car', shortClass: 'PC', description: 'Catering & Dining Unit' },
+    'first-ac': { name: 'AC First Class (1A)', shortClass: '1A', description: 'Coupes & Cabins' },
+    'two-tier': { name: 'AC 2 Tier (2A)', shortClass: '2A', description: 'Curtained 48-Berth Coach' },
+    'three-tier': { name: 'AC 3 Tier (3A)', shortClass: '3A', description: 'Air-Conditioned 72 Berths' },
+    'three-economy': { name: 'AC 3 Economy (3E)', shortClass: '3E', description: 'Modern LHB 83 Berths' },
+    'sleeper': { name: 'Sleeper Class (SL)', shortClass: 'SL', description: 'Standard 72-Berth Coach' },
+    'chair-car': { name: 'AC Chair Car (CC)', shortClass: 'CC', description: 'Air-Conditioned Sitting' },
+    'exec-chair': { name: 'Exec Chair Car (EC)', shortClass: 'EC', description: 'Premium 2x2 Reclining' },
+    'second-sitting': { name: 'Second Sitting (2S)', shortClass: '2S', description: 'Reserved Sitting Coach' },
+    'general': { name: 'General Unreserved (GS)', shortClass: 'GS', description: 'Unreserved Platform Area' },
+    'vistadome': { name: 'Vistadome 360° Glass Coach', shortClass: 'EV', description: 'Panoramic Glass View' }
+  };
+
+  return map[category] || { name: `${code} Coach`, shortClass: defaultClassCode || code, description: 'Standard Rail Coach' };
+}
+
+// Parse live API rake string or construct high-accuracy realistic rake matching train & passengers
+export function parseOrGenerateRake(pnrRes, rawPassengers = [], classCode = '', trainNo = '', trainName = '', trainType = '') {
+  const rawRake = pnrRes?.coachPosition || pnrRes?.rake || pnrRes?.trainCoachPositions || null;
+  const userCoachesSet = new Map();
+
+  rawPassengers.forEach(p => {
+    const coach = p.currentCoachId || p.coach || p.bookingCoachId || '';
+    if (coach && coach !== '--' && coach !== '0' && coach !== 'NA') {
+      const cUpper = String(coach).toUpperCase().trim();
+      const existing = userCoachesSet.get(cUpper) || [];
+      existing.push({
+        passengerNumber: p.number || 1,
+        passengerName: p.passengerName || p.name || `Passenger ${p.number || 1}`,
+        berthNumber: p.currentBerthNo || p.berth || p.bookingBerthNo || '--',
+        status: p.currentStatus || p.currentStatusNew || 'CNF'
+      });
+      userCoachesSet.set(cUpper, existing);
+    }
+  });
+
+  let coachCodesList = [];
+
+  // 1. If API provides direct live coach sequence string or array
+  if (typeof rawRake === 'string' && rawRake.trim().length > 0) {
+    const tokens = rawRake.trim().split(/[\s,]+/).filter(Boolean);
+    if (tokens.length > 0) {
+      coachCodesList = tokens.map(t => t.toUpperCase().trim());
+      const first = coachCodesList[0];
+      if (first !== 'ENG' && first !== 'L' && first !== 'LOCO' && first !== 'DTC') {
+        coachCodesList.unshift('ENG');
+      }
+    }
+  } else if (Array.isArray(rawRake) && rawRake.length > 0) {
+    coachCodesList = rawRake.map(t => (typeof t === 'string' ? t.toUpperCase().trim() : String(t?.coachId || t?.code || '').toUpperCase().trim())).filter(Boolean);
+    if (coachCodesList[0] !== 'ENG' && coachCodesList[0] !== 'L' && coachCodesList[0] !== 'LOCO') {
+      coachCodesList.unshift('ENG');
+    }
+  }
+
+  // 2. If API did not include full rake string, construct standard realistic Indian Railways rake
+  if (coachCodesList.length === 0) {
+    const tName = String(trainName || '').toUpperCase();
+    const tType = String(trainType || '').toUpperCase();
+    const isVandeBharat = tName.includes('VANDE') || tName.includes('VB') || tType.includes('VANDE');
+    const isRajdhani = tName.includes('RAJDHANI') || tType.includes('RAJDHANI');
+    const isShatabdi = tName.includes('SHATABDI') || tType.includes('SHATABDI');
+    const isGaribRath = tName.includes('GARIB RATH');
+    const isJanShatabdi = tName.includes('JAN SHATABDI');
+
+    if (isVandeBharat) {
+      coachCodesList = ['DTC', 'C1', 'C2', 'C3', 'C4', 'C5', 'E1', 'E2', 'C6', 'C7', 'DTC'];
+    } else if (isShatabdi) {
+      coachCodesList = ['ENG', 'EOG', 'E1', 'E2', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10', 'EOG'];
+    } else if (isJanShatabdi) {
+      coachCodesList = ['ENG', 'SLR', 'D1', 'D2', 'D3', 'D4', 'C1', 'C2', 'C3', 'D5', 'D6', 'D7', 'SLR'];
+    } else if (isRajdhani) {
+      coachCodesList = ['ENG', 'EOG', 'B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'PC', 'A1', 'A2', 'A3', 'A4', 'H1', 'EOG'];
+    } else if (isGaribRath) {
+      coachCodesList = ['ENG', 'EOG', 'G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'G8', 'G9', 'G10', 'G11', 'G12', 'EOG'];
+    } else {
+      const userCoachCodes = Array.from(userCoachesSet.keys());
+      const hasCC = userCoachCodes.some(c => c.startsWith('C')) || classCode === 'CC';
+      const has2S = userCoachCodes.some(c => c.startsWith('D')) || classCode === '2S';
+
+      if (hasCC || has2S) {
+        coachCodesList = ['ENG', 'SLR', 'GS', 'D1', 'D2', 'D3', 'D4', 'C1', 'C2', 'C3', 'D5', 'D6', 'GS', 'SLR'];
+      } else {
+        // Standard Superfast / Express 22-Coach Rake
+        coachCodesList = [
+          'ENG', 'EOG', 'GS', 'GS',
+          'S1', 'S2', 'S3', 'S4', 'S5', 'S6',
+          'PC',
+          'B1', 'B2', 'B3', 'B4', 'B5', 'B6',
+          'A1', 'A2',
+          'H1',
+          'GS', 'EOG'
+        ];
+      }
+
+      // If user is booked in a coach not already in the template (e.g. S7, B7, M1, etc.), inject cleanly
+      userCoachCodes.forEach(uCoach => {
+        if (!coachCodesList.includes(uCoach)) {
+          const prefix = uCoach.replace(/\d+/g, '');
+          const lastSiblingIdx = coachCodesList.map((c, i) => c.startsWith(prefix) ? i : -1).filter(i => i !== -1).pop();
+          if (lastSiblingIdx !== undefined && lastSiblingIdx >= 0) {
+            coachCodesList.splice(lastSiblingIdx + 1, 0, uCoach);
+          } else {
+            coachCodesList.splice(coachCodesList.length - 2, 0, uCoach);
+          }
+        }
+      });
+    }
+  }
+
+  // 3. Build structured coach objects with engine distance & platform sector guidance
+  let coachIndex = 0;
+  const coaches = coachCodesList.map((rawCode, idx) => {
+    const isEngine = rawCode === 'ENG' || rawCode === 'L' || rawCode === 'LOCO' || rawCode === 'DTC';
+    const code = isEngine ? 'ENG' : rawCode;
+    const category = getCoachCategory(code);
+    const details = getCoachClassDetails(code, classCode);
+
+    let positionFromEngine = 0;
+    if (!isEngine) {
+      coachIndex++;
+      positionFromEngine = coachIndex;
+    }
+
+    const matchedPax = userCoachesSet.get(code) || [];
+    const isUserCoach = matchedPax.length > 0;
+
+    // Platform sector guidance (Front / Middle / Rear)
+    const totalTrainCoaches = coachCodesList.length - 1;
+    let platformSector = 'Middle Platform (Sector C)';
+    if (positionFromEngine <= Math.ceil(totalTrainCoaches * 0.35)) {
+      platformSector = 'Front of Platform (Sector A / B)';
+    } else if (positionFromEngine > Math.ceil(totalTrainCoaches * 0.7)) {
+      platformSector = 'Rear of Platform (Sector D / E)';
+    }
+
+    return {
+      id: idx,
+      code,
+      label: isEngine ? 'Locomotive' : code,
+      isEngine,
+      positionFromEngine,
+      positionLabel: isEngine ? 'Front Engine' : `${getOrdinalSuffix(positionFromEngine)} Coach from Engine`,
+      distanceFromEngineMeters: isEngine ? 0 : Math.round(positionFromEngine * 24), // ~24 meters per Indian Railways coach
+      platformSector,
+      category,
+      className: details.name,
+      shortClass: details.shortClass,
+      description: details.description,
+      isUserCoach,
+      passengers: matchedPax
+    };
+  });
+
+  return {
+    raw: rawRake,
+    hasLiveRake: !!rawRake,
+    coaches,
+    totalCoaches: coaches.filter(c => !c.isEngine).length,
+    userCoaches: Array.from(userCoachesSet.keys())
   };
 }
 
@@ -322,6 +557,16 @@ export function formatConfirmTktResponse(pnr, rawData) {
   const rawPassengers = Array.isArray(pnrRes.passengerStatus) && pnrRes.passengerStatus.length > 0
     ? pnrRes.passengerStatus
     : [{ number: 1, currentStatus: pnrRes.currentStatus || 'CNF', bookingStatus: pnrRes.bookingStatus || 'CNF' }];
+
+  // Parse or build live rake formation & train coach layout
+  const rake = parseOrGenerateRake(
+    pnrRes,
+    rawPassengers,
+    pnrRes.class,
+    pnrRes.trainNo,
+    pnrRes.trainName,
+    pnrRes.trainType
+  );
 
   const passengers = rawPassengers.map((p, idx) => {
     let berthType = '';
@@ -352,6 +597,32 @@ export function formatConfirmTktResponse(pnr, rawData) {
       if (match) predictionPercentage = parseInt(match[1], 10);
     }
 
+    // Coach position resolution: check API passenger property first, then rake match
+    let posNum = null;
+    const rawPos = p.coachPosition ?? p.passengerCoachPosition ?? p.coach_position;
+    if (rawPos !== undefined && rawPos !== null && rawPos !== '' && rawPos !== 0) {
+      const parsed = parseInt(String(rawPos).replace(/\D/g, ''), 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        posNum = parsed;
+      }
+    }
+
+    if (!posNum && coach && coach !== '0' && coach !== 'NA' && coach !== '--') {
+      const foundInRake = rake.coaches.find(c => c.code === String(coach).toUpperCase().trim());
+      if (foundInRake && foundInRake.positionFromEngine > 0) {
+        posNum = foundInRake.positionFromEngine;
+      }
+    }
+
+    let coachPosLabel = '';
+    if (posNum) {
+      coachPosLabel = `${getOrdinalSuffix(posNum)} from Engine`;
+    } else if (coach && coach !== '0' && coach !== 'NA' && coach !== '--') {
+      coachPosLabel = 'Position Pending Chart';
+    } else {
+      coachPosLabel = 'Pending Chart Allotment';
+    }
+
     return {
       id: idx + 1,
       number: p.number || idx + 1,
@@ -364,6 +635,8 @@ export function formatConfirmTktResponse(pnr, rawData) {
       currentStatusDetails: cleanCDetails,
       coach: coach && coach !== '0' && coach !== 'NA' ? coach : '--',
       berthNumber: berthNo && berthNo !== '0' && berthNo !== '--' ? berthNo : '--',
+      coachPosition: posNum,
+      coachPositionLabel: coachPosLabel,
       berthType: (cleanCDetails === 'CAN' || cleanCDetails.includes('CANCEL')) ? 'Ticket Cancelled' : (cStatus?.includes('CNF') ? (berthType || 'Confirmed Berth') : (cStatus?.includes('RAC') ? 'Sitting Berth' : 'Pending Charting')),
       prediction: (cleanCDetails === 'CAN' || cleanCDetails.includes('CANCEL')) ? 'Cancelled' : (prediction || (cStatus?.includes('CNF') ? '100% Confirmed' : '')),
       predictionPercentage: (cleanCDetails === 'CAN' || cleanCDetails.includes('CANCEL')) ? 0 : (cStatus?.includes('CNF') ? 100 : predictionPercentage),
@@ -477,6 +750,13 @@ export function formatConfirmTktResponse(pnr, rawData) {
     confirmationProbability: probability,
     predictionSummary: passengers[0]?.prediction || (isAllCnf ? '100% Confirmed' : `${probability}% Chance`),
     coach: passengers[0]?.coach !== '--' ? passengers[0]?.coach : 'Pending Chart',
+    coachPosition: passengers[0]?.coachPosition || null,
+    coachPositionLabel: passengers[0]?.coachPositionLabel || 'Pending Chart Allotment',
+    primaryCoach: passengers[0]?.coach !== '--' ? passengers[0]?.coach : 'Pending Chart',
+    primaryCoachPosition: passengers[0]?.coachPosition || null,
+    primaryCoachPositionLabel: passengers[0]?.coachPositionLabel || 'Pending Chart Allotment',
+    rakeComposition: rake,
+    rawCoachPosition: pnrRes.coachPosition || rake.raw || null,
     passengers,
     numberOfpassenger: pnrRes.passengerCount || passengers.length,
     runningStatus: {

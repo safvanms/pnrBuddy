@@ -7,6 +7,7 @@ import PnrLoader from './components/PnrLoader';
 import PnrNotFound from './components/PnrNotFound';
 import PnrStatusOverview from './components/PnrStatusOverview';
 import RouteTimeline from './components/RouteTimeline';
+import CoachPositionView from './components/CoachPositionView';
 import PassengerTable from './components/PassengerTable';
 import SearchHistory from './components/SearchHistory';
 import TicketPrintModal from './components/TicketPrintModal';
@@ -260,6 +261,9 @@ function App() {
 
           {/* Route Timeline */}
           <RouteTimeline ticket={currentTicket} />
+
+          {/* Coach Position & Train Rake Formation */}
+          <CoachPositionView ticket={currentTicket} />
 
           {/* Passenger Booking & Current Status Manifest */}
           <PassengerTable
