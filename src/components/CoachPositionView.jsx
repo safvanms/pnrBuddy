@@ -26,6 +26,7 @@ export default function CoachPositionView({ ticket }) {
   });
 
   const trackRef = useRef(null);
+  const panelRef = useRef(null);
 
   // If coaches order is reversed (e.g. train undergoes engine reversal)
   const coaches = reversed ? [...rawCoaches].reverse() : rawCoaches;
@@ -38,15 +39,15 @@ export default function CoachPositionView({ ticket }) {
   const primaryPax = passengers[0];
   const isChartPrepared = ticket.chartStatus?.toLowerCase().includes('prepared') && !ticket.chartStatus?.toLowerCase().includes('not');
 
-  // Smooth scroll to passenger coach
-  const scrollToUserCoach = () => {
+  // Smooth scroll horizontally to passenger coach inside track
+  const centerTrackOnUserCoach = () => {
     if (!trackRef.current) return;
     const targetElement = trackRef.current.querySelector('.coach-item.user-coach');
     if (targetElement) {
-      targetElement.scrollIntoView({
-        behavior: 'smooth',
-        inline: 'center',
-        block: 'nearest'
+      const scrollLeft = targetElement.offsetLeft - (trackRef.current.clientWidth / 2) + (targetElement.clientWidth / 2);
+      trackRef.current.scrollTo({
+        left: Math.max(0, scrollLeft),
+        behavior: 'smooth'
       });
       const coachIdAttr = targetElement.getAttribute('data-coach-id');
       if (coachIdAttr !== null) {
@@ -55,16 +56,40 @@ export default function CoachPositionView({ ticket }) {
     }
   };
 
-  // Center on user's coach on initial mount
+  // Scroll window to show Coach Position & Platform Layout section properly on top
+  const scrollToCoachSection = () => {
+    if (panelRef.current) {
+      const headerOffset = 75; // accounts for fixed site header + margin
+      const elementPosition = panelRef.current.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      window.scrollTo({
+        top: Math.max(0, offsetPosition),
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleLocateCoachClick = () => {
+    scrollToCoachSection();
+    centerTrackOnUserCoach();
+  };
+
+  // Center on Coach Position & Platform Layout section and user's coach on ticket load
   useEffect(() => {
     const timer = setTimeout(() => {
-      scrollToUserCoach();
+      scrollToCoachSection();
+      centerTrackOnUserCoach();
     }, 450);
     return () => clearTimeout(timer);
   }, [ticket.pnr]);
 
   return (
-    <div className="glass-panel coach-position-panel" style={{ marginTop: '1.25rem' }}>
+    <div 
+      className="glass-panel coach-position-panel" 
+      ref={panelRef} 
+      id="coach-position-section"
+      style={{ marginTop: '1.25rem' }}
+    >
       {/* 1. Header with Title & Action Controls */}
       <div className="section-subhead coach-position-header">
         <div className="coach-head-title">
@@ -83,7 +108,7 @@ export default function CoachPositionView({ ticket }) {
             <button
               type="button"
               className="btn-secondary coach-action-btn locate-btn"
-              onClick={scrollToUserCoach}
+              onClick={handleLocateCoachClick}
               title="Center view on your assigned coach"
             >
               <Navigation size={13} style={{ color: 'var(--accent-cyan)' }} />
