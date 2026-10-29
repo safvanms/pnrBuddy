@@ -2251,6 +2251,51 @@ body {
   z-index: 5;
 }
 
+.modal-header-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  min-width: 0;
+  flex: 1;
+}
+
+.ticket-printed-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--surface-glass-border);
+  padding: 0.2rem 0.55rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.notification-toast {
+  position: fixed !important;
+  bottom: 1.5rem !important;
+  right: 1.5rem !important;
+  z-index: 1000 !important;
+}
+
+@media (max-width: 600px) {
+  .notification-toast {
+    left: 1rem !important;
+    right: 1rem !important;
+    bottom: 1rem !important;
+    max-width: calc(100% - 2rem) !important;
+  }
+}
+
+.btn-success-glow {
+  background: #16a34a !important;
+  border-color: #16a34a !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 15px rgba(22, 163, 74, 0.45) !important;
+  transition: all 0.25s ease !important;
+}
+
 .modal-body {
   padding: 1.5rem;
 }
@@ -3007,15 +3052,17 @@ body {
     justify-content: center;
   }
 
-  /* Ticket Print Grid */
+  /* Ticket Print Route Grid (maintain 3-column horizontal layout) */
   .ticket-stations-grid {
-    grid-template-columns: 1fr;
-    text-align: center;
-    gap: 1rem;
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr !important;
+    align-items: center !important;
+    text-align: left !important;
+    gap: 0.5rem !important;
   }
 
   .ticket-stations-grid > div:last-child {
-    text-align: center;
+    text-align: right !important;
   }
 
   /* Helpful Intuitive Cards: Stacked one by one */
@@ -3585,32 +3632,249 @@ body {
     line-height: 1.45 !important;
   }
 
+  /* Pixel-perfect Modal on Mobile */
   .modal-backdrop {
-    padding: 1.75rem 0.85rem;
+    padding: 0.4rem 0.25rem !important;
+    align-items: center !important;
   }
 
   .modal-dialog {
-    border-radius: var(--radius-md);
-    max-height: calc(100vh - 3.5rem);
-    margin: auto;
+    border-radius: 14px !important;
+    max-height: calc(100vh - 0.8rem) !important;
+    max-height: calc(100dvh - 0.8rem) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7) !important;
   }
 
-  .modal-header, .modal-body {
-    padding: 0.85rem;
-    font-size: 0.82rem;
+  .modal-header {
+    padding: 0.75rem 0.85rem !important;
   }
 
   .modal-header h3 {
-    font-size: 0.98rem;
+    font-size: 0.95rem !important;
   }
 
+  .modal-header-title-wrap {
+    gap: 0.4rem !important;
+  }
+
+  .ticket-printed-header-badge {
+    font-size: 0.65rem !important;
+    padding: 0.15rem 0.45rem !important;
+  }
+
+  .modal-body {
+    padding: 0.5rem 0.45rem !important;
+    font-size: 0.82rem !important;
+  }
+
+  /* Pixel-perfect Boarding Pass Ticket */
   .boarding-pass-ticket {
-    padding: 1rem;
+    padding: 0.85rem 0.75rem !important;
+    border-radius: 10px !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12) !important;
   }
 
+  .ticket-top-meta {
+    font-size: 0.68rem !important;
+    padding-bottom: 0.45rem !important;
+    margin-bottom: 0.55rem !important;
+  }
+
+  .ticket-irctc-header {
+    padding-bottom: 0.55rem !important;
+    margin-bottom: 0.65rem !important;
+    gap: 0.4rem !important;
+  }
+
+  .ticket-irctc-header h4 {
+    font-size: 0.95rem !important;
+  }
+
+  /* PNR details: Clean 2x2 grid */
   .ticket-pnr-banner {
-    flex-direction: column;
-    gap: 0.45rem;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem 0.65rem !important;
+    padding: 0.6rem 0.65rem !important;
+    margin-bottom: 0.65rem !important;
+  }
+
+  .ticket-pnr-item {
+    min-width: 0 !important;
+  }
+
+  .ticket-pnr-label {
+    font-size: 0.62rem !important;
+    letter-spacing: 0.04em !important;
+  }
+
+  .ticket-pnr-val {
+    font-size: 0.82rem !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    line-height: 1.25 !important;
+  }
+
+  .ticket-pnr-val.pnr-highlight {
+    font-size: 1.05rem !important;
+    white-space: nowrap !important;
+    letter-spacing: 0.03em !important;
+  }
+
+  /* Station Route Box: Perfect 3-column horizontal alignment */
+  .ticket-route-box {
+    padding: 0.65rem 0.65rem !important;
+    margin-bottom: 0.65rem !important;
+  }
+
+  .ticket-stations-grid {
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr !important;
+    align-items: center !important;
+    text-align: left !important;
+    gap: 0.35rem !important;
+  }
+
+  .ticket-station-block {
+    min-width: 0 !important;
+  }
+
+  .ticket-station-block.dest {
+    text-align: right !important;
+  }
+
+  .ticket-station-code {
+    font-size: clamp(1.15rem, 5vw, 1.4rem) !important;
+    line-height: 1.1 !important;
+  }
+
+  .ticket-station-name {
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    color: #334155 !important;
+    max-width: 105px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    margin: 2px 0 !important;
+  }
+
+  .ticket-station-time {
+    font-size: 0.78rem !important;
+    white-space: nowrap !important;
+  }
+
+  .ticket-station-platform {
+    font-size: 0.68rem !important;
+    white-space: nowrap !important;
+  }
+
+  .ticket-journey-mid {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    padding: 0 0.15rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  .ticket-duration-badge {
+    font-size: 0.65rem !important;
+    padding: 0.1rem 0.4rem !important;
+    margin-bottom: 2px !important;
+    white-space: nowrap !important;
+  }
+
+  .ticket-route-line {
+    width: clamp(38px, 11vw, 60px) !important;
+    gap: 1.5px !important;
+  }
+
+  .ticket-route-line .dot {
+    width: 5px !important;
+    height: 5px !important;
+  }
+
+  .ticket-route-line .train-icon {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  /* Passenger Manifest */
+  .ticket-passenger-section {
+    padding-top: 0.6rem !important;
+    margin-bottom: 0.6rem !important;
+  }
+
+  .ticket-section-title {
+    font-size: 0.68rem !important;
+    margin-bottom: 0.4rem !important;
+  }
+
+  .ticket-passenger-desktop-table {
+    display: none !important;
+  }
+
+  .ticket-passenger-mobile-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+
+  .ticket-pax-card {
+    padding: 0.55rem 0.65rem !important;
+    border-radius: 8px !important;
+  }
+
+  .ticket-pax-card-top {
+    margin-bottom: 0.35rem !important;
+    padding-bottom: 0.3rem !important;
+  }
+
+  .ticket-pax-name {
+    font-size: 0.82rem !important;
+  }
+
+  .ticket-pax-status-tag {
+    font-size: 0.68rem !important;
+    padding: 0.12rem 0.4rem !important;
+  }
+
+  .ticket-pax-grid {
+    gap: 0.3rem 0.6rem !important;
+  }
+
+  .ticket-pax-grid-label {
+    font-size: 0.62rem !important;
+  }
+
+  .ticket-pax-grid-val {
+    font-size: 0.78rem !important;
+  }
+
+  .ticket-id-warning {
+    margin-top: 0.65rem !important;
+    padding: 7px 9px !important;
+    font-size: 0.69rem !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Bottom Actions: 2 Equal Width Buttons */
+  .ticket-modal-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem !important;
+    margin-top: 0.75rem !important;
+    width: 100% !important;
+  }
+
+  .ticket-modal-actions button {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 0.65rem 0.5rem !important;
+    font-size: 0.82rem !important;
   }
 
   .coach-layout-train {

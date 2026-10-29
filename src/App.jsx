@@ -274,6 +274,7 @@ function App() {
         <TicketPrintModal
           ticket={currentTicket}
           onClose={() => setShowPrintModal(false)}
+          onDownloadSuccess={(msg) => showNotification(msg || 'e-Ticket downloaded successfully!')}
         />
       )}
 
