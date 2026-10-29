@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   CheckCircle2,
+  XCircle,
   AlertCircle,
   Clock,
   Share2,
@@ -29,26 +30,66 @@ export default function PnrStatusOverview({
   const statusClass = ticket.overallStatus.toLowerCase();
   const currentStatusText = ticket.passengers?.[0]?.currentStatus || ticket.statusLabel;
 
-  // Dynamic Chances Theme based on standardized ConfirmTkt & Ixigo brackets
-  const prob = ticket.confirmationProbability || 72;
-  const probTheme = getProbTheme(prob, ticket.overallStatus === 'CNF');
-
-  const isChartPrepared = ticket.chartStatus?.toLowerCase().includes('prepared') && !ticket.chartStatus?.toLowerCase().includes('not');
   const passengers = ticket.passengers || [];
   const isMultiPassenger = passengers.length > 1;
   const cleanDate = ticket.dateOfJourney || '--';
 
-  // Extract clean status badge text matching ConfirmTkt screenshots (e.g. "D4,18", "WL,5", "RAC,12", "CNF")
+  // Helper to detect if a passenger is cancelled
+  const isPassengerCancelled = (p) => {
+    if (!p) return false;
+    const curr = String(p.currentStatus || p.currentStatusDetails || '').toUpperCase().trim();
+    const cnfTkt = String(p.confirmTktStatus || '').toUpperCase().trim();
+    if (curr.includes('RAC')) return false;
+
+    if (
+      curr === 'CAN' ||
+      curr.startsWith('CAN ') ||
+      curr.startsWith('CAN/') ||
+      curr.startsWith('CAN,') ||
+      curr.includes('CANCEL') ||
+      /\bCAN\b/.test(curr) ||
+      cnfTkt.includes('CANCEL') ||
+      cnfTkt === 'CAN'
+    ) {
+      return true;
+    }
+
+    if (ticket.overallStatus === 'CAN' || ticket.overallStatus === 'CANCELLED') {
+      if (!curr.includes('CNF') && !curr.includes('WL') && !curr.includes('RAC')) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Dynamic Chances Theme based on standardized ConfirmTkt & Ixigo brackets
+  const isAllCancelled = passengers.length > 0 && passengers.every(isPassengerCancelled);
+  const isTicketCancelled = ticket.overallStatus === 'CAN' || ticket.overallStatus === 'CANCELLED' || isAllCancelled;
+  const prob = ticket.confirmationProbability || (isTicketCancelled ? 0 : 72);
+  const probTheme = getProbTheme(prob, ticket.overallStatus === 'CNF', isTicketCancelled);
+
+  const isChartPrepared = ticket.chartStatus?.toLowerCase().includes('prepared') && !ticket.chartStatus?.toLowerCase().includes('not');
+
+  // Extract clean status badge text matching ConfirmTkt screenshots (e.g. "B4, 14", "D4, 18", "WL, 5", "RAC, 12", "CAN", "CNF")
   const getStatusBadgeText = (p) => {
     if (!p) return '--';
+    if (isPassengerCancelled(p)) {
+      return 'CAN';
+    }
+
     const coach = p.coach && p.coach !== '--' && p.coach !== '0' && p.coach !== 'NA' ? p.coach : '';
     const berth = p.berthNumber && p.berthNumber !== '--' && p.berthNumber !== '0' ? p.berthNumber : '';
 
     if (coach && berth) {
-      return `${coach},${berth}`;
+      return `${coach}, ${berth}`;
     }
 
     const raw = p.currentStatus || '';
+    const rawCnfMatch = raw.match(/CNF[\/,\s]+([A-Z0-9]+)[\/,\s]+(\d+)/i);
+    if (rawCnfMatch) {
+      return `${rawCnfMatch[1].toUpperCase()}, ${rawCnfMatch[2]}`;
+    }
+
     if (raw.includes('CNF')) {
       if (coach) return coach;
       return 'CNF';
@@ -56,18 +97,85 @@ export default function PnrStatusOverview({
 
     const wlMatch = raw.match(/([A-Z]*WL|\bWL\b)\s*[\/,]?\s*(\d+)/i);
     if (wlMatch) {
-      return `${wlMatch[1].toUpperCase()},${wlMatch[2]}`;
+      return `${wlMatch[1].toUpperCase()}, ${wlMatch[2]}`;
     }
 
     const racMatch = raw.match(/RAC\s*[\/,]?\s*(\d+)/i);
     if (racMatch) {
-      return `RAC,${racMatch[1]}`;
+      return `RAC, ${racMatch[1]}`;
     }
 
     return raw || 'CNF';
   };
 
-  // Extract booking label matching ConfirmTkt screenshots (e.g. "Booking: WL 11", "Not chosen")
+  // Extract or calculate berth type name (e.g. "Upper Berth", "Lower Berth", etc.)
+  const getBerthTypeLabel = (p) => {
+    if (!p) return '';
+
+    // Check code abbreviation
+    const code = String(p.berthCode || p.currentBerthCode || p.bookingBerthCode || '').toUpperCase().trim();
+    const codeMap = {
+      'UB': 'Upper Berth',
+      'MB': 'Middle Berth',
+      'LB': 'Lower Berth',
+      'SL': 'Side Lower',
+      'SU': 'Side Upper',
+      'SUB': 'Side Upper',
+      'SLB': 'Side Lower',
+      'WS': 'Window Seat',
+      'CB': 'Cabin',
+      'CP': 'Coupe'
+    };
+    if (codeMap[code]) return codeMap[code];
+
+    // If p.berthType is already a descriptive string
+    if (p.berthType && typeof p.berthType === 'string') {
+      const clean = p.berthType.replace(/\s*\([A-Z0-9]+\)/gi, '').trim();
+      if (
+        clean &&
+        clean !== 'Confirmed Berth' &&
+        clean !== 'Sitting Berth' &&
+        clean !== 'Pending Charting' &&
+        clean !== 'Ticket Cancelled'
+      ) {
+        return clean;
+      }
+    }
+
+    // Determine from berth number
+    const rawNum = p.berthNumber || p.currentBerthNo || p.berth || '';
+    const bNum = parseInt(String(rawNum).replace(/\D/g, ''), 10);
+    if (!isNaN(bNum) && bNum > 0) {
+      const is2A = ticket?.classCode?.includes('2A');
+      if (is2A) {
+        const mod = bNum % 6;
+        if (mod === 1 || mod === 3) return 'Lower Berth';
+        if (mod === 2 || mod === 4) return 'Upper Berth';
+        if (mod === 5) return 'Side Lower';
+        if (mod === 0) return 'Side Upper';
+      } else {
+        const mod = bNum % 8;
+        if (mod === 1 || mod === 4) return 'Lower Berth';
+        if (mod === 2 || mod === 5) return 'Middle Berth';
+        if (mod === 3 || mod === 6) return 'Upper Berth';
+        if (mod === 7) return 'Side Lower';
+        if (mod === 0) return 'Side Upper';
+      }
+    }
+
+    // Check if status contains berth code like "UB", "LB", etc.
+    const raw = `${p.currentStatus || ''} ${p.currentStatusDetails || ''} ${p.bookingStatusDetails || ''}`;
+    for (const [abbr, label] of Object.entries(codeMap)) {
+      const reg = new RegExp(`\\b${abbr}\\b`, 'i');
+      if (reg.test(raw)) {
+        return label;
+      }
+    }
+
+    return '';
+  };
+
+  // Extract booking label matching ConfirmTkt screenshots (e.g. "Booking: RLWL, 94", "Booking: WL 11", "Not chosen")
   const getBookingLabel = (p) => {
     if (!p) return '';
     const booking = p.bookingStatus || p.bookingStatusDetails || '';
@@ -77,10 +185,28 @@ export default function PnrStatusOverview({
     if (booking === 'CNF' || booking === 'CONFIRMED') {
       return 'Not chosen';
     }
-    if (booking.toLowerCase().startsWith('booking:') || booking.toLowerCase().startsWith('booked:')) {
-      return booking;
+    let cleaned = booking;
+    if (cleaned.toLowerCase().startsWith('booking:') || cleaned.toLowerCase().startsWith('booked:')) {
+      cleaned = cleaned.replace(/^booking:\s*/i, '').replace(/^booked:\s*/i, '').trim();
     }
-    return `Booking: ${booking}`;
+    // Normalize "RLWL 94" or "RLWL/94" -> "RLWL, 94"
+    cleaned = cleaned.replace(/([A-Z]*WL|\bWL\b)\s*[\/,]?\s*(\d+)/i, (m, p1, p2) => `${p1.toUpperCase()}, ${p2}`);
+    cleaned = cleaned.replace(/RAC\s*[\/,]?\s*(\d+)/i, (m, p1) => `RAC, ${p1}`);
+    return `Booking: ${cleaned}`;
+  };
+
+  // Get passenger subtext: if CNF and has berth, show berth type (e.g. "Upper Berth"), else show booking label
+  const getPassengerSubtext = (p, isCnf, isCan) => {
+    if (isCan) {
+      return getBookingLabel(p);
+    }
+    if (isCnf) {
+      const berthLabel = getBerthTypeLabel(p);
+      if (berthLabel) {
+        return berthLabel;
+      }
+    }
+    return getBookingLabel(p);
   };
 
   const handleWhatsAppShare = () => {
@@ -90,7 +216,11 @@ export default function PnrStatusOverview({
     const text = `*pnrBuddy Live PNR Status*\n` +
       `PNR: ${ticket.pnr}\n` +
       `Train: ${ticket.trainNumber} ${ticket.trainName}\n` +
-      passengers.map((p, idx) => `P${p.number || idx + 1}: ${getStatusBadgeText(p)} (${getBookingLabel(p)})`).join('\n') +
+      passengers.map((p, idx) => {
+        const isCan = isPassengerCancelled(p);
+        const isCnf = !isCan && (p.currentStatus?.includes('CNF') || (!p.currentStatus?.includes('WL') && !p.currentStatus?.includes('RAC') && ticket.overallStatus === 'CNF'));
+        return `P${p.number || idx + 1}: ${getStatusBadgeText(p)} (${getPassengerSubtext(p, isCnf, isCan)})`;
+      }).join('\n') +
       `\nRoute: ${ticket.fromStation?.name || ticket.fromStation?.code} ➔ ${ticket.toStation?.name || ticket.toStation?.code}` +
       `\nDOJ: ${ticket.dateOfJourney}`;
 
@@ -133,13 +263,15 @@ export default function PnrStatusOverview({
         {/* Passenger Rows List */}
         <div className="confirmtkt-passenger-list">
           {passengers.map((p, idx) => {
+            const isCan = isPassengerCancelled(p);
             const badgeText = getStatusBadgeText(p);
-            const bookingText = getBookingLabel(p);
-            const isCnf = p.currentStatus?.includes('CNF') || (!p.currentStatus?.includes('WL') && !p.currentStatus?.includes('RAC') && ticket.overallStatus === 'CNF');
-            const isWl = p.currentStatus?.includes('WL') || p.currentStatus?.includes('W/L');
-            const isRac = p.currentStatus?.includes('RAC');
-            const pProb = p.predictionPercentage || (isCnf ? 100 : isRac ? 85 : prob);
-            const pTheme = getProbTheme(pProb, isCnf);
+            const isCnf = !isCan && (p.currentStatus?.includes('CNF') || (!p.currentStatus?.includes('WL') && !p.currentStatus?.includes('RAC') && ticket.overallStatus === 'CNF'));
+            const isWl = !isCan && (p.currentStatus?.includes('WL') || p.currentStatus?.includes('W/L'));
+            const isRac = !isCan && p.currentStatus?.includes('RAC');
+            const subtext = getPassengerSubtext(p, isCnf, isCan);
+            const match = p.prediction ? p.prediction.match(/(\d+)%/) : null;
+            const pProb = isCan ? 0 : (p.predictionPercentage || (match ? parseInt(match[1], 10) : (isCnf ? 100 : isRac ? 85 : prob)));
+            const pTheme = getProbTheme(pProb, isCnf, isCan);
 
             return (
               <div key={p.id || idx} className="confirmtkt-passenger-item">
@@ -160,20 +292,38 @@ export default function PnrStatusOverview({
                   )}
                 </div>
 
-                {/* Bottom Line: [Status Badge] Booking Text ... Outcome */}
+                {/* Bottom Line: [Status Badge] Booking Text / Berth Type ... Outcome */}
                 <div className="confirmtkt-passenger-body">
                   <div className="confirmtkt-status-col">
-                    <span className={`confirmtkt-status-badge badge-${isCnf ? 'cnf' : pTheme.key}`}>
+                    <span
+                      className="confirmtkt-status-badge"
+                      style={{
+                        color: pTheme.labelColor,
+                        background: pTheme.bg,
+                        border: `1px solid ${pTheme.border}`
+                      }}
+                    >
                       {badgeText}
                     </span>
                     <span className="confirmtkt-booking-desc">
-                      {bookingText}
+                      {subtext}
                     </span>
                   </div>
 
                   <div className="confirmtkt-outcome-col">
-                    {isCnf ? (
-                      <span className="confirmtkt-outcome cnf">
+                    {isCan ? (
+                      <span
+                        className="confirmtkt-outcome can"
+                        style={{ color: pTheme.labelColor }}
+                      >
+                        <XCircle size={16} />
+                        <span>Cancelled</span>
+                      </span>
+                    ) : isCnf ? (
+                      <span
+                        className="confirmtkt-outcome cnf"
+                        style={{ color: pTheme.labelColor }}
+                      >
                         <CheckCircle2 size={16} />
                         <span>Confirmed</span>
                       </span>

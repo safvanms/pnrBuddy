@@ -134,7 +134,18 @@ export async function fetchLivePnr(pnr) {
 // High: >= 70% (Green)
 // Medium: 30% - 69% (Amber / Orange)
 // Low: < 30% (Red)
-export function getProbTheme(val, isCnf = false) {
+export function getProbTheme(val, isCnf = false, isCan = false) {
+  if (isCan) {
+    return {
+      key: 'can',
+      color: '#dc2626',
+      labelColor: '#ef4444',
+      tier: 'Cancelled',
+      bg: 'rgba(239, 68, 68, 0.08)',
+      border: 'rgba(239, 68, 68, 0.3)'
+    };
+  }
+
   if (isCnf) {
     return {
       key: 'high',
@@ -184,6 +195,18 @@ export function formatPassengerStatusString(status, coach, berth) {
   const cleanStatus = String(status).replace(/\s+/g, ' ').trim();
   const cleanCoach = (coach && coach !== '0' && coach !== 'NA') ? String(coach).trim() : '';
   const cleanBerth = (berth && berth !== '0' && berth !== '--') ? String(berth).trim() : '';
+
+  // If status is cancelled
+  const upperStatus = cleanStatus.toUpperCase();
+  if (
+    upperStatus === 'CAN' ||
+    upperStatus === 'CANCELLED' ||
+    upperStatus === 'CANCELED' ||
+    upperStatus.startsWith('CAN/') ||
+    upperStatus.startsWith('CAN ')
+  ) {
+    return 'CAN';
+  }
 
   // If status is confirmed (CNF)
   if (cleanStatus.includes('CNF') || cleanStatus === 'CONFIRMED') {
@@ -341,22 +364,34 @@ export function formatConfirmTktResponse(pnr, rawData) {
       currentStatusDetails: cleanCDetails,
       coach: coach && coach !== '0' && coach !== 'NA' ? coach : '--',
       berthNumber: berthNo && berthNo !== '0' && berthNo !== '--' ? berthNo : '--',
-      berthType: cStatus?.includes('CNF') ? (berthType || 'Confirmed Berth') : (cStatus?.includes('RAC') ? 'Sitting Berth' : 'Pending Charting'),
-      prediction: prediction || (cStatus?.includes('CNF') ? '100% Confirmed' : ''),
-      predictionPercentage: cStatus?.includes('CNF') ? 100 : predictionPercentage,
+      berthType: (cleanCDetails === 'CAN' || cleanCDetails.includes('CANCEL')) ? 'Ticket Cancelled' : (cStatus?.includes('CNF') ? (berthType || 'Confirmed Berth') : (cStatus?.includes('RAC') ? 'Sitting Berth' : 'Pending Charting')),
+      prediction: (cleanCDetails === 'CAN' || cleanCDetails.includes('CANCEL')) ? 'Cancelled' : (prediction || (cStatus?.includes('CNF') ? '100% Confirmed' : '')),
+      predictionPercentage: (cleanCDetails === 'CAN' || cleanCDetails.includes('CANCEL')) ? 0 : (cStatus?.includes('CNF') ? 100 : predictionPercentage),
       confirmTktStatus: p.confirmTktStatus || ''
     };
   });
 
   // Calculate overall status across all passengers in this PNR
+  const isPassengerCan = (p) => {
+    const c = String(p.currentStatus || '').toUpperCase().trim();
+    const cnfTkt = String(p.confirmTktStatus || '').toUpperCase().trim();
+    if (c.includes('RAC')) return false;
+    return c === 'CAN' || c.startsWith('CAN ') || c.startsWith('CAN/') || c.includes('CANCEL') || cnfTkt.includes('CANCEL');
+  };
+
   const hasWl = passengers.some(p => p.currentStatus?.includes('WL') || p.currentStatus?.includes('W/L'));
   const hasRac = passengers.some(p => p.currentStatus?.includes('RAC'));
   const isAllCnf = passengers.every(p => p.currentStatus?.includes('CNF') || p.currentStatus === 'CONFIRMED');
   const anyCnf = passengers.some(p => p.currentStatus?.includes('CNF') || p.currentStatus === 'CONFIRMED');
+  const isAllCan = passengers.length > 0 && passengers.every(isPassengerCan);
+  const anyCan = passengers.some(isPassengerCan);
 
   let overallStatus = 'CNF';
   let statusLabel = 'CONFIRMED';
-  if (isAllCnf) {
+  if (isAllCan) {
+    overallStatus = 'CAN';
+    statusLabel = 'CANCELLED';
+  } else if (isAllCnf) {
     overallStatus = 'CNF';
     statusLabel = 'CONFIRMED';
   } else if (anyCnf && (hasWl || hasRac)) {
@@ -365,6 +400,9 @@ export function formatConfirmTktResponse(pnr, rawData) {
   } else if (hasRac) {
     overallStatus = 'RAC';
     statusLabel = 'Reservation Against Cancellation (RAC)';
+  } else if (anyCan && (hasWl || hasRac || anyCnf)) {
+    overallStatus = anyCnf ? 'CNF' : hasRac ? 'RAC' : 'WL';
+    statusLabel = 'Partially Cancelled';
   } else {
     overallStatus = 'WL';
     statusLabel = 'Waitlisted';
@@ -372,7 +410,9 @@ export function formatConfirmTktResponse(pnr, rawData) {
 
   // Calculate overall confirmation probability
   let probability = 100;
-  if (isAllCnf) {
+  if (isAllCan) {
+    probability = 0;
+  } else if (isAllCnf) {
     probability = 100;
   } else {
     const validProbs = passengers.map(p => p.predictionPercentage).filter(pr => pr > 0);

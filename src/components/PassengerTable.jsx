@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, TrendingUp, CheckCircle2 } from 'lucide-react';
+import { Users, TrendingUp, CheckCircle2, XCircle } from 'lucide-react';
 import { getProbTheme } from '../services/pnrService';
 
 export default function PassengerTable({ passengers, overallStatus }) {
@@ -32,10 +32,18 @@ export default function PassengerTable({ passengers, overallStatus }) {
           </thead>
           <tbody>
             {passengers.map((p, idx) => {
-              const isCnf = p.currentStatus?.includes('CNF') || overallStatus === 'CNF';
+              const isCan = !p.currentStatus?.includes('RAC') && (
+                p.currentStatus === 'CAN' ||
+                p.currentStatus?.startsWith('CAN/') ||
+                p.currentStatus?.startsWith('CAN ') ||
+                p.currentStatus?.includes('CANCEL') ||
+                overallStatus === 'CAN' ||
+                overallStatus === 'CANCELLED'
+              );
+              const isCnf = !isCan && (p.currentStatus?.includes('CNF') || overallStatus === 'CNF');
               const match = p.prediction ? p.prediction.match(/(\d+)%/) : null;
-              const pVal = p.predictionPercentage || (match ? parseInt(match[1], 10) : (isCnf ? 100 : (p.currentStatus?.includes('RAC') ? 85 : 70)));
-              const pTheme = getProbTheme(pVal, isCnf);
+              const pVal = isCan ? 0 : (p.predictionPercentage || (match ? parseInt(match[1], 10) : (isCnf ? 100 : (p.currentStatus?.includes('RAC') ? 85 : 70))));
+              const pTheme = getProbTheme(pVal, isCnf, isCan);
 
               return (
                 <tr key={p.id || idx} className="passenger-row">
@@ -77,7 +85,23 @@ export default function PassengerTable({ passengers, overallStatus }) {
                     </span>
                   </td>
                   <td data-label="Live Prediction">
-                    {isCnf ? (
+                    {isCan ? (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        color: '#f87171',
+                        background: 'rgba(239, 68, 68, 0.12)',
+                        border: '1px solid rgba(239, 68, 68, 0.35)',
+                        padding: '0.2rem 0.6rem',
+                        borderRadius: 'var(--radius-full)'
+                      }}>
+                        <XCircle size={13} />
+                        Cancelled
+                      </span>
+                    ) : isCnf ? (
                       <span style={{
                         display: 'inline-flex',
                         alignItems: 'center',
