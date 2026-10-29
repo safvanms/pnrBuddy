@@ -262,8 +262,14 @@ function App() {
           {/* Route Timeline */}
           <RouteTimeline ticket={currentTicket} />
 
-          {/* Coach Position & Train Rake Formation */}
-          <CoachPositionView ticket={currentTicket} />
+          {/* Coach Position & Train Rake Formation — only for CNF tickets with an actual berth allotted */}
+          {currentTicket.overallStatus === 'CNF' &&
+            currentTicket.passengers?.some(p =>
+              p.coach && p.coach !== '--' && p.coach !== 'NA' && p.coach !== '0' && p.coach !== 'Pending Chart' &&
+              p.berthNumber && p.berthNumber !== '--' && p.berthNumber !== '0'
+            ) && (
+            <CoachPositionView ticket={currentTicket} />
+          )}
 
           {/* Passenger Booking & Current Status Manifest */}
           <PassengerTable
