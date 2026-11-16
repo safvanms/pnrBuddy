@@ -7,7 +7,8 @@ import PnrLoader from './components/PnrLoader';
 import PnrNotFound from './components/PnrNotFound';
 import PnrStatusOverview from './components/PnrStatusOverview';
 import RouteTimeline from './components/RouteTimeline';
-import CoachPositionView from './components/CoachPositionView';
+import CoachPositionView from './components/CoachPositionView'; // disabled — coach accuracy pending
+// eslint-disable-next-line no-unused-vars
 import PassengerTable from './components/PassengerTable';
 import SearchHistory from './components/SearchHistory';
 import TicketPrintModal from './components/TicketPrintModal';
@@ -99,16 +100,29 @@ function App() {
           });
         }
 
-        // Save real searched PNR to history
-        const newEntry = {
-          pnr: liveData.pnr,
-          title: `${liveData.trainNumber} ${liveData.trainName}`,
-          status: liveData.passengers?.[0]?.currentStatus || liveData.overallStatus
-        };
+        // Save to history — skip and purge cancelled tickets
+        const isCancelledTicket =
+          liveData.overallStatus === 'CAN' ||
+          liveData.overallStatus === 'CANCELLED' ||
+          liveData.passengers?.every(p => {
+            const s = String(p.currentStatus || '').toUpperCase();
+            return s === 'CAN' || s.startsWith('CAN ') || s.includes('CANCEL');
+          });
 
         setSearchHistory(prev => {
-          const filtered = prev.filter(item => item.pnr !== liveData.pnr);
-          const updated = [newEntry, ...filtered].slice(0, 8);
+          // Always remove any existing entry for this PNR first
+          const without = prev.filter(item => item.pnr !== liveData.pnr);
+          if (isCancelledTicket) {
+            // Don't re-add — just persist the purged list
+            localStorage.setItem('pnrbuddy_pnr_history', JSON.stringify(without));
+            return without;
+          }
+          const newEntry = {
+            pnr: liveData.pnr,
+            title: `${liveData.trainNumber} ${liveData.trainName}`,
+            status: liveData.passengers?.[0]?.currentStatus || liveData.overallStatus
+          };
+          const updated = [newEntry, ...without].slice(0, 8);
           localStorage.setItem('pnrbuddy_pnr_history', JSON.stringify(updated));
           return updated;
         });
@@ -222,7 +236,7 @@ function App() {
               </div>
               <div style={{ padding: '0.85rem', borderRadius: 'var(--radius-sm)', background: 'var(--surface-hover)', border: '1px solid var(--surface-glass-border)' }}>
                 <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#fbbf24', marginBottom: '0.25rem' }}>Live Charting</div>
-                <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>Coach position & berth allotment</div>
+                <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>Berth allotment &amp; live charting</div>
               </div>
             </div>
           </div>
@@ -262,7 +276,7 @@ function App() {
           {/* Route Timeline */}
           <RouteTimeline ticket={currentTicket} />
 
-          {/* Coach Position & Train Rake Formation — only for CNF tickets with an actual berth allotted */}
+          {/* Coach Position & Train Rake Formation — DISABLED until coach data accuracy is confirmed
           {currentTicket.overallStatus === 'CNF' &&
             currentTicket.passengers?.some(p =>
               p.coach && p.coach !== '--' && p.coach !== 'NA' && p.coach !== '0' && p.coach !== 'Pending Chart' &&
@@ -270,6 +284,7 @@ function App() {
             ) && (
             <CoachPositionView ticket={currentTicket} />
           )}
+          */}
 
           {/* Passenger Booking & Current Status Manifest */}
           <PassengerTable

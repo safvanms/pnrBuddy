@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Train, X, ArrowRight, Radio } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Train, X, ArrowRight, Radio, ClipboardPaste } from 'lucide-react';
 
 export default function PnrSearch({
   onSearch,
@@ -9,6 +9,9 @@ export default function PnrSearch({
 }) {
   const [inputValue, setInputValue] = useState(currentPnr || '');
   const [inputError, setInputError] = useState('');
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [animatedDigits, setAnimatedDigits] = useState([]);
+  const inputRef = useRef(null);
 
   // Sync input value whenever currentPnr prop updates (e.g. clicking a recent search history chip)
   useEffect(() => {
@@ -42,6 +45,58 @@ export default function PnrSearch({
   const handleClear = () => {
     setInputValue('');
     setInputError('');
+    setIsAnimating(false);
+    setAnimatedDigits([]);
+    inputRef.current?.focus();
+  };
+
+  // Shared: run digit-by-digit reveal animation for a given digits string
+  const runPasteAnimation = (digits) => {
+    if (!digits) return;
+    setInputValue('');
+    setInputError('');
+    setIsAnimating(true);
+    setAnimatedDigits([]);
+
+    const arr = digits.split('');
+    arr.forEach((_, i) => {
+      setTimeout(() => {
+        setAnimatedDigits(prev => [...prev, arr[i]]);
+        if (i === arr.length - 1) {
+          // Commit to real input after animation finishes
+          setTimeout(() => {
+            setInputValue(digits);
+            setIsAnimating(false);
+            setAnimatedDigits([]);
+            inputRef.current?.focus();
+          }, 120);
+        }
+      }, i * 60);
+    });
+  };
+
+  // Intercept native Ctrl+V / right-click paste on the <input>
+  const handleNativePaste = (e) => {
+    e.preventDefault();
+    const pasted = (e.clipboardData || window.clipboardData).getData('text');
+    const digits = pasted.replace(/\D/g, '').slice(0, 10);
+    if (digits) {
+      runPasteAnimation(digits);
+    }
+  };
+
+  // Paste button: read from clipboard API, then animate
+  const handlePasteBtn = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const digits = text.replace(/\D/g, '').slice(0, 10);
+      if (digits) {
+        runPasteAnimation(digits);
+      }
+    } catch {
+      // Clipboard API blocked — focus input so the user can Ctrl+V manually
+      inputRef.current?.focus();
+    }
   };
 
   const isComplete = inputValue.length === 10;
@@ -65,30 +120,42 @@ export default function PnrSearch({
       <div className="search-box-wrap">
         <form onSubmit={handleFormSubmit} className="search-form">
           <div className="search-input-container">
-            {/* Input field with train icon & clear button */}
+            {/* Input field with train icon, animated overlay & action buttons */}
             <div className="search-field-wrapper">
               <div className="search-prefix-icon">
                 <Train size={20} />
               </div>
 
-              <input
-                type="text"
-                id="pnr-input-box"
-                className="search-input-field"
-                placeholder="Enter 10-digit PNR"
-                value={inputValue}
-                onChange={handleInputChange}
-                maxLength={10}
-                autoFocus
-                inputMode="numeric"
-                pattern="[0-9]*"
-                autoComplete="off"
-                aria-label="10-digit PNR number"
-              />
+              {/* Animated digit overlay shown during paste animation */}
+              {isAnimating ? (
+                <div className="pnr-digit-reveal" aria-hidden="true">
+                  {animatedDigits.map((d, i) => (
+                    <span key={i} className="pnr-digit-char">{d}</span>
+                  ))}
+                  <span className="pnr-digit-cursor" />
+                </div>
+              ) : (
+                <input
+                  ref={inputRef}
+                  type="text"
+                  id="pnr-input-box"
+                  className="search-input-field"
+                  placeholder="Enter 10-digit PNR"
+                  value={inputValue}
+                  onChange={handleInputChange}
+                  onPaste={handleNativePaste}
+                  maxLength={10}
+                  autoFocus
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete="off"
+                  aria-label="10-digit PNR number"
+                />
+              )}
 
-              {/* Clear button & Digit counter */}
+              {/* Right-side actions: clear (when has value) OR paste */}
               <div className="search-field-actions">
-                {inputValue && (
+                {inputValue && !isAnimating ? (
                   <button
                     type="button"
                     className="clear-icon-btn"
@@ -98,13 +165,18 @@ export default function PnrSearch({
                   >
                     <X size={12} />
                   </button>
-                )}
-
-                {/* {inputValue.length > 0 && (
-                  <span className={`digit-badge ${isComplete ? 'complete' : ''}`}>
-                    {inputValue.length}/10
-                  </span>
-                )} */}
+                ) : !isAnimating ? (
+                  <button
+                    type="button"
+                    className="paste-icon-btn"
+                    onClick={handlePasteBtn}
+                    title="Paste PNR from clipboard"
+                    aria-label="Paste PNR number"
+                  >
+                    <ClipboardPaste size={14} />
+                    <span className="paste-btn-label">Paste</span>
+                  </button>
+                ) : null}
               </div>
             </div>
 
@@ -112,7 +184,7 @@ export default function PnrSearch({
             <button
               type="submit"
               className="btn-primary search-submit-btn"
-              disabled={loading || !isComplete}
+              disabled={loading || (!isComplete && !isAnimating)}
               id="check-pnr-button"
             >
               {loading ? (
