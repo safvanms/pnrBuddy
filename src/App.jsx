@@ -208,12 +208,19 @@ function App() {
         isLiveApi={currentTicket?.isLiveFromApi}
       />
 
-      {/* Recent Searches Bar */}
-      <SearchHistory
-        history={searchHistory}
-        onSelectPnr={(pnr) => handleSearch(pnr)}
-        onClearHistory={handleClearHistory}
-      />
+      {/* Recent Searches Bar — hide while loading */}
+        <SearchHistory
+          history={searchHistory}
+          onSelectPnr={(pnr) => handleSearch(pnr)}
+          onClearHistory={handleClearHistory}
+        />
+
+      {/* Loader — full remaining height, vertically centred */}
+      {loading && (
+        <div className="loader-fullpage">
+          <PnrLoader pnr={queriedPnr} />
+        </div>
+      )}
 
       {/* Clean Initial Guide when no PNR is searched yet */}
       {!loading && !notFoundState && !currentTicket && (
@@ -241,11 +248,6 @@ function App() {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Custom Rail Scanner Loader */}
-      {loading && (
-        <PnrLoader pnr={queriedPnr} />
       )}
 
       {/* Clean Not Found Panel */}

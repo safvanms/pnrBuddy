@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 
 import { getProbTheme } from '../services/pnrService';
+import { TicketCheck } from 'lucide-react';
 
 export default function PnrStatusOverview({
   ticket,
@@ -362,6 +363,20 @@ export default function PnrStatusOverview({
 
       {/* 3. Balanced 2x2 Info Tiles Grid */}
       <div className="overview-tiles-grid">
+
+        {/* Tile 0: PNR */}
+        <div className="overview-tile">
+          <div className="tile-icon-box">
+            <TicketCheck size={15} />
+          </div>
+          <div className="tile-content">
+            <span className="tile-label">PNR Number</span>
+            <strong className="tile-value"
+            style={{letterSpacing:"2px", color: 'var(--accent-cyan)'}}
+            >{ticket.pnr}</strong>
+          </div>
+        </div>
+
         {/* Tile 1: Date of Journey */}
         <div className="overview-tile">
           <div className="tile-icon-box">
@@ -406,13 +421,13 @@ export default function PnrStatusOverview({
           </div>
           <div className="tile-content">
             <span className="tile-label">Coach</span>
-            <strong 
-              className="tile-value" 
+            <strong
+              className="tile-value"
               style={{ color: ticket.coach && ticket.coach !== 'Pending Chart' && ticket.coach !== '--' ? 'var(--accent-cyan)' : 'var(--text-secondary)' }}
               title={ticket.coach || 'Coach allotment'}
             >
-              {ticket.coach && ticket.coach !== 'Pending Chart' && ticket.coach !== '--' 
-                ? ticket.coach 
+              {ticket.coach && ticket.coach !== 'Pending Chart' && ticket.coach !== '--'
+                ? ticket.coach
                 : 'Pending Chart'}
             </strong>
           </div>
