@@ -2456,28 +2456,28 @@ body {
    TICKET / BOARDING-PASS  (.tk-*)
    ═══════════════════════════════════════════ */
 
-/* Outer wrapper — centres ticket, sets max-width */
+/* Outer wrapper — centres ticket */
 .tk-wrap {
   width: 100%;
   display: flex;
   justify-content: center;
-  margin-bottom: 4px;
+  align-items: center;
+  margin: 0 auto 4px auto;
 }
 
 /*
   tk-capture: the element html2canvas screenshots.
-  Left padding = 24px so the overflowing blue circle (left: -21px)
-  is fully inside the captured area and not clipped in the PNG.
-  Background matches modal-body so the padding area is white.
+  Transparent background so in dark/light modal it blends seamlessly.
 */
 .tk-capture {
-  padding: 4px 4px 4px 28px;
-  background: #f9fafb;   /* matches modal-body bg */
-  border-radius: 20px;
+  padding: 4px;
+  background: transparent;
+  border-radius: 14px;
   display: flex;
   width: 100%;
-  max-width: 528px;      /* 500px card + 28px left pad */
+  max-width: 480px;
   box-sizing: border-box;
+  justify-content: center;
 }
 
 @keyframes spin {
@@ -2486,88 +2486,96 @@ body {
 
 /* Card shell */
 .tk-card {
-  background: #fff;
-  border-radius: 16px;
+  background: #ffffff;
+  border-radius: 14px;
   overflow: visible;
-  box-shadow: 0 6px 32px rgba(0, 0, 0, .18);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
   font-family: var(--font-sans);
   color: #111827;
   position: relative;
   width: 100%;
-  max-width: 500px;
-  /* Extra padding so html2canvas captures the overflowing icon circle */
-  box-sizing: content-box;
+  box-sizing: border-box;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Thick coloured top bar */
+/* Vibrant top bar spanning entire ticket */
 .tk-bar {
-  height: 12px;
+  height: 10px;
   border-radius: 14px 14px 0 0;
+  width: 100%;
   flex-shrink: 0;
 }
 
-/* Row that holds left + separator + right */
+/* Row that holds the 3 sections */
 .tk-body {
   display: flex;
   flex-direction: row;
   position: relative;
-  min-height: 155px;
+  min-height: 125px;
+  border-radius: 0 0 14px 14px;
+  overflow: visible;
 }
 
-/* ── LEFT panel ─────────────────────────── */
-.tk-left {
-  flex: 1;
-  min-width: 0;
-  /* 44px left padding clears the circle icon (42px wide, half-overlapping = 21px + margin) */
-  padding: 16px 14px 20px 44px;
-  border-radius: 0 0 0 14px;
-  position: relative;
-}
-
-/* Blue circle with train icon — sits on left edge, vertically centred */
-.tk-icon-circle {
-  position: absolute;
-  top: 50%;
-  left: -21px;
-  transform: translateY(-50%);
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #2563eb, #1e40af);
+/* ── SECTION 1: LOGO COLUMN ──────────────── */
+.tk-sec-logo {
+  flex: 0 0 64px;
+  width: 64px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  box-shadow: 0 3px 14px rgba(37, 99, 235, .45);
+  border-radius: 0 0 0 14px;
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
+  position: relative;
   flex-shrink: 0;
-  z-index: 5;
 }
 
-/* Route row: FROM  •  🚂  •  TO */
+.tk-icon-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #38bdf8 0%, #2563eb 55%, #1d4ed8 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35);
+  flex-shrink: 0;
+}
+
+/* ── SECTION 2: ROUTE & PASSENGERS ───────── */
+.tk-sec-main {
+  flex: 1;
+  min-width: 0;
+  padding: 13px 12px 13px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 9px;
+}
+
+/* Route row: FROM  •  🚆  •  TO */
 .tk-route {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 12px;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
 }
 
 .tk-stn {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   flex-shrink: 0;
 }
 
 .tk-stn-right {
   text-align: right;
+  align-items: flex-end;
 }
 
 /* Large bold station code */
 .tk-code {
-  font-size: 22px;
+  font-size: 19px;
   font-weight: 900;
   color: #111827;
   line-height: 1.1;
@@ -2576,179 +2584,315 @@ body {
 
 /* Small grey city name below code */
 .tk-city {
-  font-size: 9.5px;
+  font-size: 9px;
   color: #6b7280;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 90px;
-  margin-top: 2px;
+  max-width: 80px;
+  margin-top: 1px;
 }
 
-/* Middle section: dot · train icon · dot */
+/* Middle section: line · dot · train icon · dot */
 .tk-mid {
   display: flex;
   align-items: center;
-  gap: 5px;
-  flex: 1;
   justify-content: center;
+  gap: 4px;
+  flex: 1;
+  padding: 0 4px;
+  position: relative;
+}
+
+.tk-route-line {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 50%;
+  height: 1px;
+  background: #86efac;
+  z-index: 1;
+}
+
+.tk-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #48b819;
+  flex-shrink: 0;
+  z-index: 2;
+  position: relative;
 }
 
 .tk-mid-icon {
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  z-index: 2;
+  position: relative;
+  background: transparent;
+  padding: 0 1px;
 }
 
-.tk-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  display: inline-block;
-}
-
-/* ── Passenger rows ─────────────────────── */
+/* Passenger rows */
 .tk-pax-list {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2.5px;
+  width: 100%;
 }
 
 .tk-pax-row {
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 0;
+  padding: 2.5px 0;
   white-space: nowrap;
   overflow: hidden;
+  width: 100%;
 }
 
 .tk-pax-name {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
   color: #111827;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100px;
+  max-width: 85px;
   flex-shrink: 1;
   white-space: nowrap;
 }
 
 /* Pipe separator | */
 .tk-pipe {
-  color: #d1d5db;
-  font-size: 12px;
+  color: #cbd5e1;
+  font-size: 11px;
   flex-shrink: 0;
   line-height: 1;
 }
 
 /* Quota / Class text */
 .tk-pax-meta {
-  font-size: 11px;
-  color: #6b7280;
-  font-weight: 600;
+  font-size: 10.5px;
+  color: #4b5563;
+  font-weight: 500;
   flex-shrink: 0;
   white-space: nowrap;
 }
 
 /* Status badge pill — right-aligned via margin-left:auto */
 .tk-badge {
-  font-size: 11px;
-  font-weight: 800;
-  padding: 3px 11px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2.5px 9px;
   border-radius: 999px;
   flex-shrink: 0;
   margin-left: auto;
   white-space: nowrap;
+  line-height: 1.2;
 }
 
-/* ── Dashed separator ───────────────────── */
+/* ── SEPARATOR: Dashed tear line ─────────── */
 .tk-sep {
-  width: 2px;
-  flex-shrink: 0;
-  background: repeating-linear-gradient(
-    to bottom,
-    #9ca3af 0, #9ca3af 6px,
-    transparent 6px, transparent 12px
-  );
+  width: 0;
+  border-left: 1.5px dashed #c0ccd9;
   position: relative;
-  z-index: 2;
-  /* no negative margin — the dashed line sits between panels */
+  z-index: 3;
+  flex-shrink: 0;
+  align-self: stretch;
 }
 
 /* Semicircle notches cut into top/bottom of separator */
 .tk-notch {
   position: absolute;
-  left: 50%;
+  left: -1px;
   transform: translateX(-50%);
-  width: 22px;
-  height: 22px;
-  /* Match page/modal background so it looks like a cut-out */
-  background: #f3f4f6;
+  width: 18px;
+  height: 18px;
+  background: var(--tk-notch-bg, var(--bg-secondary, #1a2236));
   border-radius: 50%;
   z-index: 4;
 }
 
 .tk-notch-top {
-  top: -11px;
+  top: -15px; /* centers the 18px circle directly over the top of the 10px bar */
 }
 
 .tk-notch-bot {
-  bottom: -11px;
+  bottom: -9px; /* centers the 18px circle directly over the bottom edge */
 }
 
-/* ── RIGHT stub ─────────────────────────── */
-.tk-right {
-  width: 148px;
-  flex-shrink: 0;
-  padding: 16px 14px 20px 16px;
+/* ── SECTION 3: PNR, DATE & TRAIN ─────────── */
+/* Items stacked on top one by one, NOT justify-between */
+.tk-sec-stub {
+  flex: 0 0 140px;
+  width: 140px;
+  padding: 13px 12px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 11px;
   border-radius: 0 0 14px 0;
-  background: #fff;
+  background: #ffffff;
+  flex-shrink: 0;
 }
 
-/* PNR pill — full width, bold monospace, themed border + bg */
+/* PNR pill — full width, bold, themed background */
 .tk-pnr-pill {
-  font-size: 12px;
-  font-weight: 900;
-  padding: 7px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 8px;
   border-radius: 999px;
-  border: 2px solid;          /* borderColor set via inline style */
   text-align: center;
-  font-family: var(--font-mono);
-  letter-spacing: 0.03em;
+  font-family: var(--font-sans);
+  letter-spacing: 0.02em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Icon + value row */
 .tk-stub-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
 }
 
 .tk-stub-icon {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  color: #374151;
+  color: #1e293b;
 }
 
 .tk-stub-val {
-  font-size: 13px;
-  font-weight: 800;
+  font-size: 11.5px;
+  font-weight: 700;
   color: #111827;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
-  line-height: 1.3;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+/* ── Mobile responsiveness (< 480px) ───── */
+@media (max-width: 480px) {
+  .tk-capture {
+    padding: 2px;
+    max-width: 100%;
+  }
+
+  .tk-card {
+    border-radius: 12px;
+  }
+
+  .tk-bar {
+    height: 8px;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .tk-body {
+    min-height: 115px;
+    border-radius: 0 0 12px 12px;
+  }
+
+  /* Section 1: Logo */
+  .tk-sec-logo {
+    flex: 0 0 46px;
+    width: 46px;
+  }
+
+  .tk-icon-circle {
+    width: 30px;
+    height: 30px;
+    box-shadow: 0 2px 7px rgba(37, 99, 235, 0.3);
+  }
+
+  /* Section 2: Main */
+  .tk-sec-main {
+    padding: 9px 8px 9px 8px;
+    gap: 7px;
+  }
+
+  .tk-code {
+    font-size: 15px;
+  }
+
+  .tk-city {
+    font-size: 8px;
+    max-width: 55px;
+  }
+
+  .tk-dot {
+    width: 4px;
+    height: 4px;
+  }
+
+  .tk-pax-row {
+    gap: 3px;
+    padding: 1.5px 0;
+  }
+
+  .tk-pax-name {
+    font-size: 9.5px;
+    max-width: 55px;
+  }
+
+  .tk-pipe {
+    font-size: 8.5px;
+  }
+
+  .tk-pax-meta {
+    font-size: 8.5px;
+  }
+
+  .tk-badge {
+    font-size: 8.5px;
+    padding: 2px 6px;
+  }
+
+  .tk-notch {
+    width: 14px;
+    height: 14px;
+  }
+
+  .tk-notch-top {
+    top: -12px;
+  }
+
+  .tk-notch-bot {
+    bottom: -7px;
+  }
+
+  /* Section 3: Stub — items top-aligned one by one */
+  .tk-sec-stub {
+    flex: 0 0 112px;
+    width: 112px;
+    padding: 9px 7px;
+    gap: 8px;
+  }
+
+  .tk-pnr-pill {
+    font-size: 9px;
+    padding: 3.5px 6px;
+  }
+
+  .tk-stub-row {
+    gap: 4px;
+  }
+
+  .tk-stub-val {
+    font-size: 9.5px;
+  }
 }
 
 .ticket-id-warning {
