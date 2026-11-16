@@ -135,7 +135,9 @@ export default function TicketPrintModal({ ticket, onClose, onDownloadSuccess })
 
           {/* ── TICKET CARD — ref used by html2canvas ──────── */}
           <div className="tk-wrap">
-            <div className="tk-card" ref={cardRef}>
+            {/* tk-capture has left padding to include the overflowing icon circle */}
+            <div className="tk-capture" ref={cardRef}>
+              <div className="tk-card">
 
               {/* Thick coloured top bar */}
               <div className="tk-bar" style={{ background: T.bar }} />
@@ -214,6 +216,7 @@ export default function TicketPrintModal({ ticket, onClose, onDownloadSuccess })
 
               </div>{/* /tk-body */}
             </div>{/* /tk-card */}
+            </div>{/* /tk-capture */}
           </div>{/* /tk-wrap */}
 
           {/* Actions */}

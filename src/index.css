@@ -2444,6 +2444,26 @@ body {
   margin-bottom: 4px;
 }
 
+/*
+  tk-capture: the element html2canvas screenshots.
+  Left padding = 24px so the overflowing blue circle (left: -21px)
+  is fully inside the captured area and not clipped in the PNG.
+  Background matches modal-body so the padding area is white.
+*/
+.tk-capture {
+  padding: 4px 4px 4px 28px;
+  background: #f9fafb;   /* matches modal-body bg */
+  border-radius: 20px;
+  display: flex;
+  width: 100%;
+  max-width: 528px;      /* 500px card + 28px left pad */
+  box-sizing: border-box;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Card shell */
 .tk-card {
   background: #fff;
@@ -2455,6 +2475,12 @@ body {
   position: relative;
   width: 100%;
   max-width: 500px;
+  /* Extra padding so html2canvas captures the overflowing icon circle */
+  box-sizing: content-box;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Thick coloured top bar */
