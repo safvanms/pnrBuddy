@@ -70,17 +70,17 @@ const cleanStationName = (name) => {
     .trim();
 };
 
-const formatTrainName = (num, name) => {
-  if (!name) return num || '--';
+const cleanTrainName = (name) => {
+  if (!name) return '';
   const clean = name
     .toLowerCase()
     .split(' ')
     .map(w => w ? w.charAt(0).toUpperCase() + w.slice(1) : '')
     .join(' ')
-    .replace(/\bExpress\b/gi, 'SF')
+    .replace(/\bExpress\b/gi, 'Exp')
     .replace(/\bSuperfast\b/gi, 'SF')
     .replace(/\bSpecial\b/gi, 'Spl');
-  return `${num} ${clean}`.trim();
+  return clean.trim();
 };
 
 const getQuotaLabel = (q) => {
@@ -103,6 +103,15 @@ const getQuotaLabel = (q) => {
 const formatDateOfJourney = (doj) => {
   if (!doj || doj === '--') return '--';
   return String(doj).trim().replace(/[-/]/g, ':');
+};
+
+const getPassengerDisplayName = (p, index) => {
+  const num = p?.number || p?.passengerSerialNumber || index + 1;
+  const raw = String(p?.name || p?.passengerName || '').trim();
+  if (!raw || /^passenger$/i.test(raw)) {
+    return `Passenger ${num}`;
+  }
+  return raw;
 };
 
 export default function TicketPrintModal({ ticket, onClose, onDownloadSuccess }) {
@@ -296,7 +305,7 @@ export default function TicketPrintModal({ ticket, onClose, onDownloadSuccess })
                         const isCan = isPassengerCancelled(p);
                         const bc = isCan ? '#dc2626' : T.badgeColor;
                         const bb = isCan ? '#fee2e2' : T.badgeBg;
-                        const paxName = p.name ? p.name : `Passenger ${i + 1}`;
+                        const paxName = getPassengerDisplayName(p, i);
                         const paxQuota = getQuotaLabel(p.quota || quota);
                         return (
                           <div key={i} className="tk-pax-row">
@@ -315,7 +324,6 @@ export default function TicketPrintModal({ ticket, onClose, onDownloadSuccess })
                   {/* ── SEPARATOR: Dashed tear line + notches ─ */}
                   <div className="tk-sep">
                     <span className="tk-notch tk-notch-top" />
-                    <span className="tk-notch tk-notch-bot" />
                   </div>
 
                   {/* ── SECTION 3: PNR, DATE & TRAIN (Items on top one by one) ─ */}
@@ -329,13 +337,22 @@ export default function TicketPrintModal({ ticket, onClose, onDownloadSuccess })
                     </div>
                     <div className="tk-stub-row">
                       <span className="tk-stub-icon"><TrainFrontSvg size={15} color="#1e293b" /></span>
-                      <span className="tk-stub-val" title={`${ticket.trainNumber} ${ticket.trainName}`}>
-                        {formatTrainName(ticket.trainNumber, ticket.trainName)}
+                      <span className="tk-stub-val" title={`${ticket.trainNumber || ''} ${ticket.trainName || ''}`.trim()}>
+                        {ticket.trainNumber && <strong className="tk-train-num">{ticket.trainNumber}</strong>}
+                        {ticket.trainName ? ` ${cleanTrainName(ticket.trainName)}` : ''}
                       </span>
                     </div>
                   </div>
 
                 </div>{/* /tk-body */}
+
+                {/* ── Informational disclaimer ON the ticket at the bottom ── */}
+                <div className="tk-footer">
+                  <span className="tk-footer-text">
+                    * This is an indicative PNR status slip, not an official travel ticket. Please carry your valid original ticket &amp; Govt. photo ID during journey.
+                  </span>
+                  <span className="tk-notch tk-notch-bot" />
+                </div>
               </div>{/* /tk-card */}
             </div>{/* /tk-capture */}
           </div>{/* /tk-wrap */}

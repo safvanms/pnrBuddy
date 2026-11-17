@@ -2474,6 +2474,8 @@ body {
   background: transparent;
   border-radius: 14px;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   width: 100%;
   max-width: 480px;
   box-sizing: border-box;
@@ -2660,8 +2662,8 @@ body {
   color: #111827;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 85px;
-  flex-shrink: 1;
+  max-width: 95px;
+  flex-shrink: 0;
   white-space: nowrap;
 }
 
@@ -2759,7 +2761,7 @@ body {
 /* Icon + value row */
 .tk-stub-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   min-width: 0;
   width: 100%;
@@ -2770,18 +2772,62 @@ body {
   display: flex;
   align-items: center;
   color: #1e293b;
+  margin-top: 1.5px;
 }
 
 .tk-stub-val {
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   color: #111827;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
   flex: 1;
   min-width: 0;
   line-height: 1.25;
+}
+
+.tk-train-num {
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: 0.02em;
+}
+
+/* Footer bar ON the ticket at the bottom */
+.tk-footer {
+  position: relative;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  border-radius: 0 0 14px 14px;
+  padding: 6px 14px 7px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.tk-footer-text {
+  font-size: 9px;
+  color: #64748b;
+  text-align: center;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  font-weight: 500;
+}
+
+/* Bottom notch on the ticket footer aligned with the tear line */
+.tk-footer .tk-notch-bot {
+  position: absolute;
+  right: 140px;
+  left: auto;
+  transform: translateX(50%);
+  bottom: -9px;
+  width: 18px;
+  height: 18px;
+  background: var(--tk-notch-bg, var(--bg-secondary, #1a2236));
+  border-radius: 50%;
+  z-index: 4;
 }
 
 /* ── Mobile responsiveness (< 480px) ───── */
@@ -2843,8 +2889,10 @@ body {
   }
 
   .tk-pax-name {
-    font-size: 9.5px;
-    max-width: 55px;
+    font-size: 8.5px;
+    font-weight: 600;
+    max-width: 75px;
+    flex-shrink: 0;
   }
 
   .tk-pipe {
@@ -2888,10 +2936,41 @@ body {
 
   .tk-stub-row {
     gap: 4px;
+    align-items: flex-start;
+  }
+
+  .tk-stub-icon {
+    margin-top: 1px;
   }
 
   .tk-stub-val {
     font-size: 9.5px;
+    font-weight: 600;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.2;
+  }
+
+  .tk-train-num {
+    font-weight: 900;
+  }
+
+  .tk-footer {
+    padding: 5px 8px 6px 8px;
+    border-radius: 0 0 12px 12px;
+  }
+
+  .tk-footer-text {
+    font-size: 7.5px;
+    line-height: 1.3;
+  }
+
+  .tk-footer .tk-notch-bot {
+    right: 112px;
+    bottom: -7px;
+    width: 14px;
+    height: 14px;
   }
 }
 
