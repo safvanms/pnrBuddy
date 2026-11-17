@@ -372,7 +372,8 @@ export default function PnrStatusOverview({
           <div className="tile-content">
             <span className="tile-label">PNR Number</span>
             <strong className="tile-value"
-            style={{letterSpacing:"2px", color: 'var(--accent-cyan)'}}
+              style={{ letterSpacing: "0.5px", color: 'var(--accent-cyan)' }}
+              title={ticket.pnr}
             >{ticket.pnr}</strong>
           </div>
         </div>
@@ -384,7 +385,7 @@ export default function PnrStatusOverview({
           </div>
           <div className="tile-content">
             <span className="tile-label">Journey Date</span>
-            <strong className="tile-value">{cleanDate}</strong>
+            <strong className="tile-value" title={cleanDate}>{cleanDate}</strong>
           </div>
         </div>
 
@@ -395,7 +396,7 @@ export default function PnrStatusOverview({
           </div>
           <div className="tile-content">
             <span className="tile-label">Class & Quota</span>
-            <strong className="tile-value">
+            <strong className="tile-value" title={`${ticket.classCode} • ${ticket.quota?.split(' ')[0] || 'GN'}${isMultiPassenger ? ` • ${passengers.length} Pax` : ''}`}>
               {ticket.classCode} • {ticket.quota?.split(' ')[0] || 'GN'}{isMultiPassenger ? ` • ${passengers.length} Pax` : ''}
             </strong>
           </div>
@@ -408,7 +409,7 @@ export default function PnrStatusOverview({
           </div>
           <div className="tile-content">
             <span className="tile-label">Chart Status</span>
-            <strong className="tile-value" style={{ color: isChartPrepared ? '#34d399' : '#f59e0b' }}>
+            <strong className="tile-value" style={{ color: isChartPrepared ? '#34d399' : '#f59e0b' }} title={ticket.chartStatus || 'Not Prepared'}>
               ● {ticket.chartStatus || 'Not Prepared'}
             </strong>
           </div>
@@ -440,7 +441,7 @@ export default function PnrStatusOverview({
           </div>
           <div className="tile-content">
             <span className="tile-label">Data Source</span>
-            <strong className="tile-value" style={{ color: 'var(--accent-cyan)' }}>
+            <strong className="tile-value" style={{ color: 'var(--accent-cyan)' }} title="CRIS PRS Node">
               CRIS PRS Node
             </strong>
           </div>
